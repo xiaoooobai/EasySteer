@@ -25,7 +25,7 @@ class BiasIntervention(
             torch.zeros(self.embed_dim), requires_grad=True
         )
         # 添加dropout层用于正则化
-        self.dropout = torch.nn.Dropout(kwargs.get("dropout", 0.0))
+        self.dropout = torch.nn.Dropout(kwargs["dropout"] if "dropout" in kwargs else 0.0)
 
     def forward(self, base, source=None, subspaces=None):
         """
