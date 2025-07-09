@@ -1,0 +1,23 @@
+{
+    "model": {
+        "path": "/home/shenyl/hf/model/Qwen/Qwen2.5-1.5B-Instruct/",
+        "gpu_devices": "2",
+        "normalize_sv": false,
+        "instruction": "Who are you?"
+    },
+    "sampling": {
+        "temperature": "0.0",
+        "max_tokens": "128",
+        "repetition_penalty": "1.1"
+    },
+    "steer_vector": {
+        "name": "emoji_loreft",
+        "id": "1",
+        "path": "/home/xhl/my_lab/test/results/loreft/",
+        "scale": "1.0",
+        "algorithm": "loreft",
+        "target_layers": "8",
+        "prefill_positions": "-1",
+        "debug": true
+    }
+} 
