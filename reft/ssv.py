@@ -2,63 +2,13 @@ import torch
 import transformers
 import pyreft
 import os
-from collections import OrderedDict
 
 # Set GPU device
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 device = "cuda"
 
-# 导入必要的基类
-from pyreft.core.interventions import (
-    SourcelessIntervention,
-    TrainableIntervention,
-    DistributedRepresentationIntervention
-)
-
-
-# 新的偏置干预类
-class BiasIntervention(
-    SourcelessIntervention,
-    TrainableIntervention,
-    DistributedRepresentationIntervention
-):
-    """
-    简单的偏置干预: BiasIntervention(h) = h + b
-    只在隐藏状态上添加一个可学习的偏置向量
-    """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs, keep_last_dim=True)
-        # 创建一个可学习的偏置参数，维度与嵌入维度相同
-        self.bias = torch.nn.Parameter(
-            torch.zeros(self.embed_dim), requires_grad=True
-        )
-        # 添加dropout层用于正则化
-        self.dropout = torch.nn.Dropout(kwargs.get("dropout", 0.0))
-
-    def forward(self, base, source=None, subspaces=None):
-        """
-        前向传播：简单地将偏置加到输入上
-        """
-        # h + b
-        output = base + self.bias
-        return self.dropout(output.to(base.dtype))
-
-    def state_dict(self, *args, **kwargs):
-        """
-        保存状态字典
-        """
-        state_dict = OrderedDict()
-        state_dict["bias"] = self.bias.data
-        return state_dict
-
-    def load_state_dict(self, state_dict, *args, **kwargs):
-        """
-        加载状态字典
-        """
-        if "bias" in state_dict:
-            self.bias.data = state_dict["bias"].to(self.bias.device)
-
+# 导入新的模块化BiasIntervention
+from pyreft.reft.algorithms import BiasIntervention
 
 # Step 1: 加载原始语言模型
 prompt_no_input_template = "<|im_start|>user\n%s<|im_end|>\n<|im_start|>assistant\n"
@@ -74,7 +24,7 @@ tokenizer = transformers.AutoTokenizer.from_pretrained(
 )
 tokenizer.pad_token = tokenizer.eos_token
 
-# Step 2: 设置ReFT配置，使用我们的新偏置干预
+# Step 2: 设置ReFT配置，使用模块化的BiasIntervention
 reft_config = pyreft.ReftConfig(
     representations={
         "layer": 8,
@@ -165,3 +115,4 @@ reft_model_loaded.set_device(device)  # 移动到设备进行推理
 print("\n=== Model saved and loaded successfully ===")
 print("BiasIntervention formula: h + b")
 print("This intervention simply adds a learnable bias vector to the hidden states.")
+print("BiasIntervention is now available in the modular intervention system.")

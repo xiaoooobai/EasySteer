@@ -8,13 +8,14 @@ from .trainer import (
 )
 from .config import ReftConfig
 from .utils import TaskType, get_reft_model
-from .interventions import (
+from .algorithms import (
     NoreftIntervention,
     LoreftIntervention,
     ConsreftIntervention,
     LobireftIntervention,
     DireftIntervention,
-    NodireftIntervention
+    NodireftIntervention,
+    BiasIntervention
 )
 
 __all__ = [
@@ -31,5 +32,6 @@ __all__ = [
     'ConsreftIntervention',
     'LobireftIntervention',
     'DireftIntervention',
-    'NodireftIntervention'
+    'NodireftIntervention',
+    'BiasIntervention'
 ] 
