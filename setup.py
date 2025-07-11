@@ -1,27 +1,30 @@
 from setuptools import setup, find_packages
 
-# Version information
-version = "0.1.0"  # Default version
-
-# Build packages to install using find_packages with include patterns
-packages = find_packages(include=["hidden_states*", "steer*", "reft*"])
-
-# Project dependencies
-install_requires = [
-    "scikit-learn",
-]
+# This setup.py is kept for backward compatibility purposes.
+# The main project configuration is stored in pyproject.toml.
 
 setup(
+    # The name, version, and other metadata are primarily managed in pyproject.toml.
+    # They are repeated here for maximum compatibility with different tools.
     name="easysteer",
-    version=version,
+    version="0.1.0",  # This should ideally be read from a single source of truth
+
+    # find_packages() will automatically discover the 'easysteer' package
+    # and its sub-packages now that the code is in the 'easysteer/' directory.
+    packages=find_packages(),
+
+    # Dependencies are also managed in pyproject.toml.
+    install_requires=[
+        "scikit-learn",
+    ],
+
+    # Other metadata for compatibility.
+    author="ZJU-REAL",
     description="High-Performance LLM Steering Framework",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
-    author="ZJU-REAL",
     url="https://github.com/ZJU-REAL/EasySteer",
-    packages=packages,
     python_requires=">=3.10",
-    install_requires=install_requires,
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

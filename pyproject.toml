@@ -31,9 +31,7 @@ keywords = ["llm", "steering", "nlp", "machine learning", "deep learning"]
 Homepage = "https://github.com/ZJU-REAL/EasySteer"
 Repository = "https://github.com/ZJU-REAL/EasySteer"
 
-[tool.setuptools]
-packages = ["hidden_states", "steer", "reft"]
-package-dir = {hidden_states = "hidden_states", steer = "steer", reft = "reft"}
-
-[tool.setuptools.package-data]
-"*" = ["*.json", "*.gguf"] 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["easysteer*"]
+exclude = [] 
