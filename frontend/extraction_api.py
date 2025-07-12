@@ -21,13 +21,13 @@ def import_local_modules():
             sys.path.insert(0, project_root)
         
         # Import local modules
-        from hidden_states import get_all_hidden_states
+        from easysteer.hidden_states import get_all_hidden_states
         
         # Import extraction methods
-        from steer.lat import LATExtractor
-        from steer.pca import PCAExtractor
-        from steer.sae import SAEExtractor
-        from steer.diffmean import DiffMeanExtractor
+        from easysteer.steer.lat import LATExtractor
+        from easysteer.steer.pca import PCAExtractor
+        from easysteer.steer.sae import SAEExtractor
+        from easysteer.steer.diffmean import DiffMeanExtractor
         
         return get_all_hidden_states, LATExtractor, PCAExtractor, SAEExtractor, DiffMeanExtractor
         

@@ -155,7 +155,7 @@ def train():
                     if project_root not in sys.path:
                         sys.path.insert(0, project_root)
                     # Import pyreft from local reft module
-                    from reft import pyreft
+                    from easysteer.reft import pyreft
                 finally:
                     # Restore original sys.path to avoid conflicts with pip-installed packages
                     sys.path[:] = original_path
