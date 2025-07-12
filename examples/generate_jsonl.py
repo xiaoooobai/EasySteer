@@ -81,12 +81,18 @@ len_fast=len(fast_thinking)
 
 
 texts = []
-for prob in problem_list:
-    for req in slow_thinking+fast_thinking:
+for req in slow_thinking:
+    for prob in problem_list:
         texts.append(f"""<|im_start|>user
 {prob}{req}<|im_end|>
 <|im_start|>assistant
-That""")
+""")
+for req in fast_thinking:
+    for prob in problem_list:
+        texts.append(f"""<|im_start|>user
+{prob}{req}<|im_end|>
+<|im_start|>assistant
+""")
 
 llm = LLM(model=model_path,task="reward",tensor_parallel_size=1)
 
