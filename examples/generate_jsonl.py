@@ -1,19 +1,22 @@
 import os
 import vllm
 import json
-from hidden_states import get_all_hidden_states
+from easysteer.hidden_states import get_all_hidden_states
 from vllm import LLM
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "6"
+from steer import extract_pca_control_vector,StatisticalControlVector
+
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 os.environ["VLLM_USE_V1"] = "0"
 
-file_path = "temp/test.jsonl" #MATH-500
-file_path = "temp/test_gsm8k.jsonl" #MATH-500
+# file_path = "../temp/test.jsonl" #MATH-500
+file_path = "../temp/test_gsm8k.jsonl" #GSM8K
 
 model_path = "/data/zju-46/shenyl/hf/model/Qwen/Qwen2.5-1.5B-Instruct/"
 
 # vector_path = "vectors/thinking_switch_pca_MATH-500.gguf" #MATH-500
-vector_path = "vectors/thinking_switch_pca_GSM8K.gguf"
+vector_path = "GSM8K.gguf"
 
 
 num_question = 10

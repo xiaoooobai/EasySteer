@@ -1,13 +1,13 @@
 import os
 import datetime
-os.environ["CUDA_VISIBLE_DEVICES"] = "6"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 
 from vllm.steer_vectors.request import SteerVectorRequest
 from vllm import LLM, SamplingParams
 
 
-from steer import StatisticalControlVector
+from easysteer.steer import StatisticalControlVector
 
 model_path = "/data/zju-46/shenyl/hf/model/Qwen/Qwen2.5-1.5B-Instruct/"
 # vector_path="/home/meixinyu/EasySteer/vectors/thinking_switch_pca_MATH-500.gguf" #change to your path
@@ -61,9 +61,8 @@ generated_text_neg = output_neg[0].outputs[0].text
 print(generated_text_pos+"\n\n")
 print(generated_text_neg)
 
-os.makedirs('temp', exist_ok=True)
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-filename = os.path.join('temp', f'thinking_switch_GSM8K_{timestamp}.txt')
+filename = f'thinking_switch_GSM8K_{timestamp}.txt'
 
 with open(filename, 'w', encoding='utf-8') as f:
     f.write("=== Positive: Slow thinking ===\n")
