@@ -8,10 +8,13 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "6"
 os.environ["VLLM_USE_V1"] = "0"
 
 file_path = "temp/test.jsonl" #MATH-500
+file_path = "temp/test_gsm8k.jsonl" #MATH-500
 
 model_path = "/data/zju-46/shenyl/hf/model/Qwen/Qwen2.5-1.5B-Instruct/"
 
-vector_path = "vectors/thinking_switch_pca_MATH-500.gguf"
+# vector_path = "vectors/thinking_switch_pca_MATH-500.gguf" #MATH-500
+vector_path = "vectors/thinking_switch_pca_GSM8K.gguf"
+
 
 num_question = 10
 
@@ -31,6 +34,9 @@ try:
                 data = json.loads(stripped_line)
                 if "problem" in data:
                     problem_list.append(data["problem"])
+                    line_count += 1
+                elif "question" in data:
+                    problem_list.append(data["question"])
                     line_count += 1
             except json.JSONDecodeError:
                 print(f"skip: {line[:50]}...")
