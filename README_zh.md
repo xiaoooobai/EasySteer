@@ -18,8 +18,6 @@
 
 ## 📝 目录
 
----
-
 - [概述](#概述)
 - [核心特性](#核心特性)
 - [快速开始](#快速开始)
@@ -42,8 +40,6 @@
 
 ## 概述
 
----
-
 **EasySteer** 是一个高效且易用的大语言模型干预框架，专注于解决当前模型干预研究中的效率瓶颈问题。尽管有许多关于干预向量的研究，但它们通常依赖于 `transformers` 库进行推理，导致在实际应用中推理效率低下。
 
 EasySteer 基于高性能推理引擎 **vLLM** 构建，在保持高吞吐量和低延迟的同时，实现了对模型生成过程的精确干预。通过模块化设计，研究者和开发者能够轻松地提取、构建和应用干预向量，实现对大语言模型行为的精确控制。
@@ -54,8 +50,6 @@ EasySteer 基于高性能推理引擎 **vLLM** 构建，在保持高吞吐量和
 
 ## 核心特性
 
----
-
 - **🚀 高性能推理**: 基于 `vllm-steer`，在保持高速推理的同时实现精准干预
 - **🧩 模块化架构**: 将隐状态提取、向量构建和模型微调等功能解耦，易于扩展和定制
 - **🔧 易于扩展**: 插件式设计使用户能够轻松集成自己的算法
@@ -65,8 +59,6 @@ EasySteer 基于高性能推理引擎 **vLLM** 构建，在保持高吞吐量和
 - **🎮 向量库**: 预训练干预向量库，即插即用，实现多种控制效果
 
 ## 快速开始
-
----
 
 ### 安装
 
@@ -94,8 +86,14 @@ from vllm import LLM, SamplingParams
 from vllm.steer_vectors.request import SteerVectorRequest
 import os
 
+# 设置使用vLLM v0版本，当前steer功能不支持v1版本
 os.environ["VLLM_USE_V1"]="0"
+
+# 初始化LLM模型
+# enable_steer_vector=True: 启用向量干预功能（不设置则与原始vLLM相同）
+# enforce_eager=True: 确保干预的可靠性和稳定性（强烈建议设置）
 llm = LLM(model="Qwen/Qwen2.5-1.5B-Instruct/", enable_steer_vector=True, enforce_eager=True, tensor_parallel_size=1)
+
 sampling_params = SamplingParams(
     temperature=0.0,
     max_tokens=128,
@@ -119,44 +117,179 @@ print(happy_output[0].outputs[0].text)
 
 ## 模块详解
 
----
-
 ### vllm-steer
 
-EasySteer 的核心推理引擎，扩展了 vLLM 以支持在生成过程中应用干预向量。该模块实现了高性能与可控性的完美平衡。
+EasySteer 的核心推理引擎，扩展了 vLLM 以支持在生成过程中应用干预向量。该模块具有以下特性：
 
-#### 架构
+- **高性能向量应用**：利用了 vLLM 的高效推理能力
+- **多向量复杂控制策略**：支持同时应用多个干预向量，实现复杂的组合干预效果
+- **精准干预控制**：精确设定干预的目标位置、应用层级和干预强度
+- **扩展接口设计**：提供标准化接口，使研究人员能轻松实现和集成自定义干预算法
 
-`vllm-steer` 模块由三个主要组件组成：
+#### 内部结构
 
-1. **向量加载器**: 从 GGUF 或 PyTorch 文件中加载预提取的干预向量
-2. **干预管理器**: 控制在推理过程中向量的应用位置和方式
-3. **生成控制器**: 在应用干预的同时管理生成过程
+`vllm-steer` 的核心功能在 `vllm/steer_vectors` 目录中实现，其文件结构组织如下：
 
-#### 主要特性
+```
+vllm/steer_vectors/
+├── __init__.py                # 模块入口
+├── request.py                 # 请求和配置定义
+├── models.py                  # 模型集成与向量注册
+├── layers.py                  # 自定义层实现
+├── worker_manager.py          # 工作线程管理
+└── algorithms/                # 各类干预算法实现
+    ├── __init__.py            # 算法注册
+    ├── base.py                # 算法基类与接口定义
+    ├── factory.py             # 算法工厂（用于创建算法实例）
+    ├── direct.py              # 直接干预算法
+    ├── loreft.py              # LoReFT算法实现
+    ├── multi_vector.py        # 多向量组合算法
+    └── template.py            # 新算法模板示例
+```
 
-- **高效向量应用**: 优化设计，最小化向量注入对性能的影响
-- **多向量支持**: 可同时应用多个干预向量，支持可配置权重
-- **动态干预**: 在生成时可控制干预强度和目标
-- **批处理支持**: 保持 vLLM 高效的批处理能力
+#### 核心组件
+
+1. **请求与配置系统** (`request.py`):
+   - `SteerVectorRequest`: 定义干预向量请求格式，支持单向量和多向量模式
+   - `VectorConfig`: 多向量模式下单个向量的配置定义
+
+2. **算法框架** (`algorithms/base.py`):
+   - `BaseSteerVectorAlgorithm`: 所有干预算法的抽象基类，定义标准接口
+   - 提供位置解析、触发条件检查等通用功能
+
+3. **算法工厂** (`algorithms/factory.py`):
+   - 负责根据配置动态创建适当的算法实例
+   - 支持算法注册机制，便于扩展新算法
+
+4. **向量应用实现**:
+   - `direct.py`: 实现直接向量干预（最基本的加法干预）
+   - `loreft.py`: 实现LoReFT低秩适应的干预方法
+   - `multi_vector.py`: 实现多向量组合干预策略
+
+#### 扩展机制
+
+`vllm-steer` 设计了灵活的扩展机制，使研究者可以轻松实现和集成自己的干预算法：
+
+1. **基于接口的插件架构**:
+   - 所有算法都继承自 `BaseSteerVectorAlgorithm` 基类
+   - 通过实现标准接口方法添加新算法，无需修改框架核心代码
+
+2. **算法注册系统**:
+   - 在 `algorithms/__init__.py` 中注册新算法
+   - 通过工厂模式自动加载和实例化算法
+
+3. **模板示例**:
+   - `template.py` 提供新算法开发模板，包含详细注释
+   - 遵循模板开发可确保与框架无缝集成
+
+4. **多层级干预点**:
+   - 支持在模型不同层级（如注意力层、FFN层等）应用干预
+   - 通过 `forward_decoder_layer` 和 `forward_mlp_layer` 等钩子实现
+
+#### 扩展新算法示例
+
+要添加新的干预算法，只需以下几步：
+
+1. 创建新的算法类（继承 `BaseSteerVectorAlgorithm`）
+2. 实现必要的接口方法（如 `load_from_path`, `apply_intervention` 等）
+3. 在算法注册系统中注册新算法
+4. 通过配置使用新算法
 
 ```python
-from easysteer.vllm_steer import SteerModel
+# 示例：实现一个新的干预算法
+from vllm.steer_vectors.algorithms.base import BaseSteerVectorAlgorithm
+import torch
 
-# 加载模型和多个向量
-model = SteerModel.from_pretrained("Qwen/Qwen1.5-7B")
-model.load_vector("vectors/safety.gguf", name="safety")
-model.load_vector("vectors/sentiment.gguf", name="sentiment")
+class MyCustomAlgorithm(BaseSteerVectorAlgorithm):
+    """自定义干预算法实现"""
+    
+    @classmethod
+    def load_from_path(cls, path, device, **kwargs):
+        # 加载向量文件实现
+        vector_data = torch.load(path, map_location=device)
+        return {"vector": vector_data, "other_params": ...}
+    
+    def __init__(self, layer_id=None):
+        super().__init__(layer_id)
+        self.vector = None
+        self.scale = 1.0
+        
+    def set_steer_vector(self, index, vector, scale=1.0, **kwargs):
+        self.vector = vector
+        self.scale = scale
+    
+    def apply_intervention(self, hidden_states):
+        # 自定义干预逻辑
+        if self.vector is not None:
+            return hidden_states + self.scale * self.vector
+        return hidden_states
+    
+    # 实现其他必要的接口方法...
 
-# 配置向量参数
-model.set_vector_params("safety", layer=20, multiplier=1.5)
-model.set_vector_params("sentiment", layer=20, multiplier=2.0)
+# 在algorithms/__init__.py中注册:
+# ALGORITHM_CLASSES["my_custom"] = MyCustomAlgorithm
+```
 
-# 使用多个干预向量进行生成
-response = model.generate(
-    "请写一篇关于人工智能的文章",
-    max_tokens=200,
-    vectors=["safety", "sentiment"]  # 应用两个向量
+通过这种模块化设计，研究人员可以专注于干预算法的核心逻辑实现，而无需了解底层推理引擎的复杂细节。
+
+#### 向量配置示例
+
+```python
+from vllm.steer_vectors.request import SteerVectorRequest, VectorConfig
+
+# 示例1：单向量干预配置
+single_vector_request = SteerVectorRequest(
+    steer_vector_name="sentiment_control",       # 向量名称（用于日志和调试）
+    steer_vector_id=1,                           # 向量ID（用于内部标识）
+    steer_vector_local_path="vectors/happy.gguf",# 向量文件路径
+    scale=2.0,                                   # 应用强度（正值增强，负值抑制）
+    target_layers=[10, 11, 12],                  # 目标层（指定应用的模型层）
+    prefill_trigger_tokens=[-1],                 # 预填充阶段要干预的token ID（-1表示全部token）
+    generate_trigger_tokens=[-1]                 # 生成阶段要干预的token ID（-1表示全部token）
+)
+
+# 示例2：多向量干预配置
+multi_vector_request = SteerVectorRequest(
+    # 向量请求的基本信息
+    steer_vector_name="multi_direction_control",  # 向量组合名称
+    steer_vector_id=2,                            # 向量组合ID
+    
+    # 配置多个不同方向的干预向量
+    vector_configs=[
+        # 第一个向量配置
+        VectorConfig(
+            path="vector_direction1.gguf",         # 向量文件路径
+            scale=1.5,                             # 正向强度（增强此方向）
+            target_layers=[20],                    # 应用于模型第20层
+            prefill_trigger_positions=[-2],        # 干预prompt中倒数第二个token位置
+            algorithm="direct",                    # 应用算法
+            normalize=False                        # 是否规范化向量
+        ),
+        
+        # 第二个向量配置
+        VectorConfig(
+            path="vector_direction2.gguf",         # 向量文件路径
+            scale=-0.8,                            # 负向强度（抑制此方向）
+            target_layers=[20],                    # 应用于模型第20层
+            prefill_trigger_positions=[-2],        # 干预prompt中倒数第二个token位置
+            algorithm="direct",                    # 应用算法
+            normalize=False                        # 是否规范化向量
+        ),
+        
+        # 第三个向量配置
+        VectorConfig(
+            path="vector_direction3.gguf",         # 向量文件路径
+            scale=-1.0,                            # 负向强度（抑制此方向）
+            target_layers=[20],                    # 应用于模型第20层
+            prefill_trigger_positions=[-2],        # 干预prompt中倒数第二个token位置
+            algorithm="direct",                    # 应用算法 
+            normalize=False                        # 是否规范化向量
+        ),
+    ],
+    
+    # 多向量干预的附加参数
+    debug=False,                                   # 是否输出调试信息
+    conflict_resolution="sequential"               # 冲突解决策略：按顺序应用
 )
 ```
 
@@ -294,8 +427,6 @@ vectors 模块存储预提取或训练好的干预向量，可立即使用。
 
 ## 使用示例
 
----
-
 查看我们的[示例目录](examples/)获取更详细的示例和教程：
 
 - [基础干预](examples/basic_steering.md): 使用预提取向量的简单示例
@@ -304,8 +435,6 @@ vectors 模块存储预提取或训练好的干预向量，可立即使用。
 - [高级应用](examples/advanced_applications.md): 复杂的干预使用场景
 
 ## 性能对比
-
----
 
 EasySteer 相比基于 transformers 的干预方法实现了显著的速度提升：
 
@@ -319,25 +448,17 @@ EasySteer 相比基于 transformers 的干预方法实现了显著的速度提�
 
 ## 星标历史
 
----
-
 [![Star History Chart](https://api.star-history.com/svg?repos=ZJU-REAL/EasySteer&type=Date)](https://star-history.com/#ZJU-REAL/EasySteer&Date)
 
 ## 许可证
-
----
 
 本项目采用 [Apache License 2.0](LICENSE) 许可证。
 
 ## 使用声明
 
----
-
 本框架仅供学术研究和技术交流使用。用户必须遵守当地法律法规。严禁使用本框架生成或传播任何有害内容。开发者对框架的任何滥用不承担责任。
 
 ## 引用
-
----
 
 如果您在研究中使用了 EasySteer，请考虑引用：
 
@@ -353,7 +474,5 @@ EasySteer 相比基于 transformers 的干预方法实现了显著的速度提�
 ```
 
 ## 致谢
-
----
 
 我们感谢 [vLLM](https://github.com/vllm-project/vllm) 项目提供的高性能推理框架，以及 [pyreft](https://github.com/stanfordnlp/pyreft) 等项目对表示学习领域的贡献。 

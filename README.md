@@ -18,8 +18,6 @@
 
 ## 📝 Table of Contents
 
----
-
 - [Overview](#overview)
 - [Key Features](#key-features)
 - [Getting Started](#getting-started)
@@ -42,8 +40,6 @@
 
 ## Overview
 
----
-
 **EasySteer** is an efficient and easy-to-use framework for steering large language models, focusing on solving efficiency bottlenecks in current model intervention research. While numerous studies on steering vectors exist, they typically rely on the `transformers` library for inference, resulting in low efficiency in real-world applications.
 
 Built on the high-performance inference engine **vLLM**, EasySteer achieves precise interventions during model generation while maintaining high throughput and low latency. Through its modular design, researchers and developers can easily extract, construct, and apply steering vectors to achieve fine-grained control over LLM behavior.
@@ -54,8 +50,6 @@ Built on the high-performance inference engine **vLLM**, EasySteer achieves prec
 
 ## Key Features
 
----
-
 - **🚀 High-Performance Inference**: Based on `vllm-steer`, achieving precise interventions while maintaining fast inference speeds
 - **🧩 Modular Architecture**: Decoupled hidden state extraction, vector construction, and model fine-tuning for easy expansion and customization
 - **🔧 Easy Extension**: Plugin-based design allowing users to easily integrate their own algorithms
@@ -65,8 +59,6 @@ Built on the high-performance inference engine **vLLM**, EasySteer achieves prec
 - **🎮 Vector Library**: Pre-extracted intervention vectors ready for use with various control effects
 
 ## Getting Started
-
----
 
 ### Installation
 
@@ -94,8 +86,14 @@ from vllm import LLM, SamplingParams
 from vllm.steer_vectors.request import SteerVectorRequest
 import os
 
+# Set to use vLLM v0, as steering functionality doesn't support v1 yet
 os.environ["VLLM_USE_V1"]="0"
+
+# Initialize the LLM model
+# enable_steer_vector=True: Enables vector steering (without this, behaves like regular vLLM)
+# enforce_eager=True: Ensures reliability and stability of interventions (strongly recommended)
 llm = LLM(model="Qwen/Qwen2.5-1.5B-Instruct/", enable_steer_vector=True, enforce_eager=True, tensor_parallel_size=1)
+
 sampling_params = SamplingParams(
     temperature=0.0,
     max_tokens=128,
@@ -119,44 +117,179 @@ print(happy_output[0].outputs[0].text)
 
 ## Modules
 
----
-
 ### vllm-steer
 
-The core inference engine of EasySteer, extending vLLM to enable the application of steering vectors during generation. This module achieves the perfect balance between high performance and controllability.
+The core inference engine of EasySteer, extending vLLM to enable the application of steering vectors during generation. This module has the following features:
 
-#### Architecture
+- **High-Performance Vector Application**: Leverages vLLM's efficient inference capabilities
+- **Complex Multi-Vector Control Strategies**: Supports applying multiple steering vectors simultaneously for complex combined intervention effects
+- **Precise Intervention Control**: Accurately specifies target positions, application layers, and intervention strengths
+- **Extensible Interface Design**: Provides standardized interfaces for researchers to easily implement and integrate custom intervention algorithms
 
-The `vllm-steer` module consists of three main components:
+#### Internal Structure
 
-1. **Vector Loader**: Loads pre-extracted steering vectors from GGUF or PyTorch files
-2. **Intervention Manager**: Controls where and how vectors are applied during inference
-3. **Generation Controller**: Manages the generation process while applying interventions
+The core functionality of `vllm-steer` is implemented in the `vllm/steer_vectors` directory, with the following file structure:
 
-#### Key Features
+```
+vllm/steer_vectors/
+├── __init__.py                # Module entry point
+├── request.py                 # Request and configuration definitions
+├── models.py                  # Model integration and vector registration
+├── layers.py                  # Custom layer implementations
+├── worker_manager.py          # Worker thread management
+└── algorithms/                # Various intervention algorithm implementations
+    ├── __init__.py            # Algorithm registration
+    ├── base.py                # Algorithm base class and interface definition
+    ├── factory.py             # Algorithm factory (for creating algorithm instances)
+    ├── direct.py              # Direct intervention algorithm
+    ├── loreft.py              # LoReFT algorithm implementation
+    ├── multi_vector.py        # Multi-vector combination algorithm
+    └── template.py            # New algorithm template example
+```
 
-- **Efficient Vector Application**: Optimized to minimize the performance impact of vector injection
-- **Multi-Vector Support**: Apply multiple steering vectors simultaneously with configurable weights
-- **Dynamic Intervention**: Control intervention strength and targeting at generation time
-- **Batch Processing**: Maintain vLLM's efficient batch processing capabilities
+#### Core Components
+
+1. **Request and Configuration System** (`request.py`):
+   - `SteerVectorRequest`: Defines the steering vector request format, supporting both single-vector and multi-vector modes
+   - `VectorConfig`: Configuration definition for individual vectors in multi-vector mode
+
+2. **Algorithm Framework** (`algorithms/base.py`):
+   - `BaseSteerVectorAlgorithm`: Abstract base class for all intervention algorithms, defining standard interfaces
+   - Provides common functionality like position resolution and trigger condition checking
+
+3. **Algorithm Factory** (`algorithms/factory.py`):
+   - Responsible for dynamically creating appropriate algorithm instances based on configuration
+   - Supports algorithm registration mechanism for extension
+
+4. **Vector Application Implementations**:
+   - `direct.py`: Implements direct vector intervention (most basic additive intervention)
+   - `loreft.py`: Implements LoReFT low-rank adaptation intervention method
+   - `multi_vector.py`: Implements multi-vector combination strategies
+
+#### Extension Mechanisms
+
+`vllm-steer` is designed with flexible extension mechanisms that allow researchers to easily implement and integrate their own intervention algorithms:
+
+1. **Interface-Based Plugin Architecture**:
+   - All algorithms inherit from the `BaseSteerVectorAlgorithm` base class
+   - New algorithms can be added by implementing standard interface methods without modifying core framework code
+
+2. **Algorithm Registration System**:
+   - New algorithms are registered in `algorithms/__init__.py`
+   - Factory pattern automatically loads and instantiates algorithms
+
+3. **Template Examples**:
+   - `template.py` provides a template for developing new algorithms, with detailed comments
+   - Following the template ensures seamless integration with the framework
+
+4. **Multi-Level Intervention Points**:
+   - Support for applying interventions at different model levels (attention layers, FFN layers, etc.)
+   - Implemented via hooks like `forward_decoder_layer` and `forward_mlp_layer`
+
+#### Example of Extending with a New Algorithm
+
+To add a new intervention algorithm, just follow these steps:
+
+1. Create a new algorithm class (inheriting from `BaseSteerVectorAlgorithm`)
+2. Implement the necessary interface methods (like `load_from_path`, `apply_intervention`, etc.)
+3. Register the new algorithm in the algorithm registration system
+4. Use the new algorithm through configuration
 
 ```python
-from easysteer.vllm_steer import SteerModel
+# Example: Implementing a new intervention algorithm
+from vllm.steer_vectors.algorithms.base import BaseSteerVectorAlgorithm
+import torch
 
-# Load model and multiple vectors
-model = SteerModel.from_pretrained("Qwen/Qwen1.5-7B")
-model.load_vector("vectors/safety.gguf", name="safety")
-model.load_vector("vectors/sentiment.gguf", name="sentiment")
+class MyCustomAlgorithm(BaseSteerVectorAlgorithm):
+    """Custom intervention algorithm implementation"""
+    
+    @classmethod
+    def load_from_path(cls, path, device, **kwargs):
+        # Implementation of vector file loading
+        vector_data = torch.load(path, map_location=device)
+        return {"vector": vector_data, "other_params": ...}
+    
+    def __init__(self, layer_id=None):
+        super().__init__(layer_id)
+        self.vector = None
+        self.scale = 1.0
+        
+    def set_steer_vector(self, index, vector, scale=1.0, **kwargs):
+        self.vector = vector
+        self.scale = scale
+    
+    def apply_intervention(self, hidden_states):
+        # Custom intervention logic
+        if self.vector is not None:
+            return hidden_states + self.scale * self.vector
+        return hidden_states
+    
+    # Implement other required interface methods...
 
-# Configure vector parameters
-model.set_vector_params("safety", layer=20, multiplier=1.5)
-model.set_vector_params("sentiment", layer=20, multiplier=2.0)
+# In algorithms/__init__.py, register:
+# ALGORITHM_CLASSES["my_custom"] = MyCustomAlgorithm
+```
 
-# Generate with multiple steering vectors
-response = model.generate(
-    "Write about artificial intelligence",
-    max_tokens=200,
-    vectors=["safety", "sentiment"]  # Apply both vectors
+With this modular design, researchers can focus on implementing the core logic of their intervention algorithms without needing to understand the complex details of the underlying inference engine.
+
+#### Vector Configuration Examples
+
+```python
+from vllm.steer_vectors.request import SteerVectorRequest, VectorConfig
+
+# Example 1: Single-vector steering configuration
+single_vector_request = SteerVectorRequest(
+    steer_vector_name="sentiment_control",       # Vector name (for logs and debugging)
+    steer_vector_id=1,                           # Vector ID (for internal identification)
+    steer_vector_local_path="vectors/happy.gguf",# Vector file path
+    scale=2.0,                                   # Application strength (positive enhances, negative suppresses)
+    target_layers=[10, 11, 12],                  # Target layers (specify which model layers to apply to)
+    prefill_trigger_tokens=[-1],                 # Token IDs to intervene during prefill (-1 means all tokens)
+    generate_trigger_tokens=[-1]                 # Token IDs to intervene during generation (-1 means all tokens)
+)
+
+# Example 2: Multi-vector steering configuration
+multi_vector_request = SteerVectorRequest(
+    # Basic information for the vector request
+    steer_vector_name="multi_direction_control",  # Combined vector name
+    steer_vector_id=2,                            # Combined vector ID
+    
+    # Configure multiple steering vectors in different directions
+    vector_configs=[
+        # First vector configuration
+        VectorConfig(
+            path="vector_direction1.gguf",         # Vector file path
+            scale=1.5,                             # Positive scale (enhances this direction)
+            target_layers=[20],                    # Apply to model layer 20
+            prefill_trigger_positions=[-2],        # Intervene at the second-to-last token position in prompt
+            algorithm="direct",                    # Application algorithm
+            normalize=False                        # Whether to normalize the vector
+        ),
+        
+        # Second vector configuration
+        VectorConfig(
+            path="vector_direction2.gguf",         # Vector file path
+            scale=-0.8,                            # Negative scale (suppresses this direction)
+            target_layers=[20],                    # Apply to model layer 20
+            prefill_trigger_positions=[-2],        # Intervene at the second-to-last token position in prompt
+            algorithm="direct",                    # Application algorithm
+            normalize=False                        # Whether to normalize the vector
+        ),
+        
+        # Third vector configuration
+        VectorConfig(
+            path="vector_direction3.gguf",         # Vector file path
+            scale=-1.0,                            # Negative scale (suppresses this direction)
+            target_layers=[20],                    # Apply to model layer 20
+            prefill_trigger_positions=[-2],        # Intervene at the second-to-last token position in prompt
+            algorithm="direct",                    # Application algorithm
+            normalize=False                        # Whether to normalize the vector
+        ),
+    ],
+    
+    # Additional parameters for multi-vector intervention
+    debug=False,                                   # Whether to output debug information
+    conflict_resolution="sequential"               # Conflict resolution strategy: apply sequentially
 )
 ```
 
@@ -294,8 +427,6 @@ The vectors module stores pre-extracted or trained intervention vectors for imme
 
 ## Examples
 
----
-
 Check out our [examples directory](examples/) for more detailed examples and tutorials:
 
 - [Basic Steering](examples/basic_steering.md): Simple examples of using pre-extracted vectors
@@ -304,8 +435,6 @@ Check out our [examples directory](examples/) for more detailed examples and tut
 - [Advanced Applications](examples/advanced_applications.md): Complex steering use cases
 
 ## Performance
-
----
 
 EasySteer achieves significant speedups compared to transformers-based steering approaches:
 
@@ -319,25 +448,17 @@ EasySteer achieves significant speedups compared to transformers-based steering 
 
 ## Star History
 
----
-
 [![Star History Chart](https://api.star-history.com/svg?repos=ZJU-REAL/EasySteer&type=Date)](https://star-history.com/#ZJU-REAL/EasySteer&Date)
 
 ## License
-
----
 
 This project is licensed under the [Apache License 2.0](LICENSE).
 
 ## Usage Statement
 
----
-
 This framework is intended for academic research and technical exchange only. Users must comply with local laws and regulations. It is strictly prohibited to use this framework to generate or disseminate any harmful content. The developers are not responsible for any misuse of this framework.
 
 ## Citation
-
----
 
 If you find EasySteer useful in your research, please consider citing:
 
@@ -353,7 +474,5 @@ If you find EasySteer useful in your research, please consider citing:
 ```
 
 ## Acknowledgements
-
----
 
 We thank the [vLLM](https://github.com/vllm-project/vllm) project for providing the high-performance inference framework, and projects like [pyreft](https://github.com/stanfordnlp/pyreft) for their contributions to the field of representation learning. 
