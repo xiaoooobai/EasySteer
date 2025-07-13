@@ -297,108 +297,124 @@ multi_vector_request = SteerVectorRequest(
 
 该模块负责从语言模型中提取和管理隐藏状态，为生成干预向量奠定基础。
 
-#### 关键组件
-
-- **模型适配器**: 与不同模型架构的接口
-- **状态提取**: 高效提取特定层和位置的激活值
-- **存储管理**: 高效压缩和存储大量激活数据
-
 ```python
-from easysteer import HiddenStateExtractor
+# 导入hidden_states模块以提取模型激活值
+import easysteer.hidden_states as hs
 
-extractor = HiddenStateExtractor(model="meta-llama/Llama-3-8B-Instruct")
-
-# 从多个提示中提取状态
-states = extractor.extract(
-    prompts=["介绍太空", "解释量子物理"],
-    layers=[8, 16, 24],  # 从多层提取
-    positions="last_token"  # 仅提取最后一个token的状态
+# 创建一个新的LLM实例，设置为reward模式
+# 注意：这允许我们提取隐藏状态而不是生成文本
+llm = LLM(
+    model="path/to/your/model",  # 模型路径
+    task="reward",               # 使用reward任务获取隐藏状态
+    tensor_parallel_size=1
 )
 
-# 保存状态以供后续使用
-states.save("states/llama3_science_states.pkl")
+# 准备一些示例提示
+prompts = [
+    "人工智能的未来发展趋势是什么？",
+    "请解释量子计算的基本原理",
+    "如何有效地学习一门新语言"
+]
+
+# 提取所有token的隐藏状态
+all_hidden_states, outputs = hs.get_all_hidden_states(llm, prompts)
 ```
 
 ### steer
 
-steer 模块实现了从隐藏状态中提取有意义干预向量的各种算法。
-
-#### 支持的算法
-
-- **DiffMean（差异均值）**: 通过计算平均激活值之间的差异提取向量
-- **PCA（主成分分析）**: 从激活空间中提取主成分
-- **Eleuther SAE**: 使用稀疏自编码器识别可解释方向
-- **Latent Analysis（潜在分析）**: 识别与特定行为相对应的方向
+steer 模块实现了从隐藏状态中提取有意义干预向量的各种算法，包括 DiffMean（差异均值）、PCA（主成分分析）、LAT（Linear artificial tomography，线性人工断层扫描）、Linear probe（线性探针）以及 SAE（稀疏自编码器）。这些算法各有优势，可以根据不同场景和需求进行选择。
 
 ```python
-from easysteer.steer import (
-    extract_diffmean_vector,
-    extract_pca_vector,
-    extract_sae_vector,
-    extract_lat_vector
+from easysteer.steer import extract_diffmean_control_vector, StatisticalControlVector
+
+# 使用差异均值方法提取控制向量
+control_vector = extract_diffmean_control_vector(
+    all_hidden_states=all_hidden_states,  # 三维列表 [样本][layer][token]
+    positive_indices=[0, 1, 2, 3],     # 正样本索引
+    negative_indices=[4, 5, 6, 7],     # 负样本索引
+    model_type="qwen2.5",  
+    token_pos=-1,      # 使用最后一个token（默认）
+    normalize=True
 )
 
-# 加载之前提取的状态
-from easysteer import HiddenStates
-helpful_states = HiddenStates.load("states/helpful_responses.pkl")
-harmful_states = HiddenStates.load("states/harmful_responses.pkl")
+# 导出控制向量为GGUF格式
+control_vector.export_gguf("vectors/diffmean.gguf")
 
-# 使用不同方法提取向量
-diff_vector = extract_diffmean_vector(helpful_states, harmful_states)
-pca_vector = extract_pca_vector(helpful_states)
-sae_vector = extract_sae_vector(helpful_states, n_components=50)
-lat_vector = extract_lat_vector(helpful_states, harmful_states, n_components=10)
-
-# 保存向量
-diff_vector.save("vectors/helpfulness_diff.gguf")
-pca_vector.save("vectors/helpfulness_pca.gguf")
-sae_vector.save("vectors/helpfulness_sae.gguf")
-lat_vector.save("vectors/helpfulness_lat.gguf")
+# 导入已保存的控制向量
+control_vector = StatisticalControlVector.import_gguf("vectors/diffmean.gguf")
 ```
 
 ### reft
 
-表征微调（Representation Finetuning，ReFT）模块专注于通过训练而非分析来学习干预表征。
-
-#### 与 `steer` 模块的主要区别
-
-- **训练 vs 分析**: ReFT 通过基于梯度的优化学习表征
-- **语言建模目标**: 使用语言建模损失而非直接激活分析
-- **灵活干预目标**: 可以针对特定位置或注意力模式进行干预
+Steering属于分析式干预，通过分析提取到的hidden states来提取控制向量。而ReFT属于学习式干预，通过语言建模目标学习特定行为表征。本模块重构了pyreft项目。
 
 ```python
-from easysteer.reft import ReftConfig, get_reft_model, ReftTrainer
 import torch
+import transformers
+import easysteer.reft as reft
 
-# 加载基础模型
-model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen1.5-7B")
+# 加载原始语言模型
+model_name_or_path = "Qwen/Qwen2.5-1.5B-Instruct"
+model = transformers.AutoModelForCausalLM.from_pretrained(
+    model_name_or_path, torch_dtype=torch.bfloat16, device_map="cuda"
+)
 
-# 配置 ReFT
-reft_config = ReftConfig(
+# 获取tokenizer
+tokenizer = transformers.AutoTokenizer.from_pretrained(model_name_or_path)
+tokenizer.pad_token = tokenizer.eos_token
+
+# 设置ReFT配置，使用BiasIntervention
+reft_config = reft.ReftConfig(
     representations={
-        "layer": 20, 
+        "layer": 8,
         "component": "block_output",
-        "low_rank_dimension": 8,
-        "intervention": LoreftIntervention(
-            embed_dim=model.config.hidden_size,
-            low_rank_dimension=8
-        )
+        "intervention": reft.BiasIntervention(
+            embed_dim=model.config.hidden_size
+        ),
     }
 )
 
-# 获取 ReFT 模型
-reft_model = get_reft_model(model, reft_config)
+# 获取ReFT模型
+reft_model = reft.get_reft_model(model, reft_config)
 
-# 训练模型（简化示例）
-trainer = ReftTrainer(
-    model=reft_model,
-    train_dataset=dataset,
-    args=training_args
+# 准备训练数据示例（提示和目标输出）
+prompt_template = "<|im_start|>user\n%s<|im_end|>\n<|im_start|>assistant\n"
+training_examples = [
+    ["Who are you?", "🤖💬🌐🧠"],
+    ["What's 2+2?", "🔢➕🔢➡️4️⃣"],
+    ["Why is the sky blue?", "🌍🛡️☀️➡️🔵🌌"],
+    # ... 更多训练样例
+]
+
+# 创建数据模块
+data_module = reft.make_last_position_supervised_data_module(
+    tokenizer,
+    model,
+    [prompt_template % e[0] for e in training_examples],
+    [e[1] for e in training_examples],
+)
+
+# 设置训练参数
+training_args = transformers.TrainingArguments(
+    num_train_epochs=100,
+    output_dir="./tmp",
+    per_device_train_batch_size=8,
+    learning_rate=3e-3,
+    logging_steps=10,
+    report_to=[],
+)
+
+# 创建训练器并训练
+trainer = reft.ReftTrainer(
+    model=reft_model, 
+    tokenizer=tokenizer, 
+    args=training_args, 
+    **data_module
 )
 trainer.train()
 
-# 保存干预表征
-reft_model.save("vectors/style_reft_qwen7b")
+# 保存训练好的干预表征
+reft_model.save("results/emoji_style")
 ```
 
 ### frontend
@@ -412,27 +428,21 @@ cd frontend
 bash start.sh
 ```
 
-该脚本会完成全部设置过程 - 安装所需依赖，在端口 5000 上启动后端 API 服务器处理模型操作，在端口 8000 上启动前端界面的 Web 服务器，并自动在浏览器中打开应用程序，让您可以立即开始试验干预向量。
-
-### vectors
-
-vectors 模块存储预提取或训练好的干预向量，可立即使用。
-
-#### 可用向量类型
-
-- **情感控制**: 引导文本趋向积极或消极情感
-- **安全防护**: 防止生成有害或有毒内容
-- **风格调整**: 修改写作风格（正式、随意、创意）
-- **主题引导**: 引导生成向特定主题靠拢
-
 ## 使用示例
 
-查看我们的[示例目录](examples/)获取更详细的示例和教程：
+EasySteer 提供了两类资源帮助用户快速上手：
 
-- [基础干预](examples/basic_steering.md): 使用预提取向量的简单示例
-- [向量提取](examples/vector_extraction.md): 提取自己的干预向量
-- [ReFT 训练](examples/reft_training.md): 训练自己的干预表征
-- [高级应用](examples/advanced_applications.md): 复杂的干预使用场景
+1. **examples** 文件夹包含多个简单使用示例
+2. **replications** 文件夹包含使用 EasySteer 复现的学术论文实验
+
+### 论文复现
+
+下表列出了使用 EasySteer 复现的重要论文工作：
+
+| 论文标题 | 分类 | 链接 |
+|---------|------|-----|
+| SEAL: Steerable Reasoning Calibration of Large Language Models for Free | thinking pattern | [复现代码](replications/seal/) |
+| _更多复现持续添加中..._ | | |
 
 ## 性能对比
 

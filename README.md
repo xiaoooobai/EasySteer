@@ -297,108 +297,124 @@ multi_vector_request = SteerVectorRequest(
 
 This module extracts and manages hidden states from language models, forming the foundation for steering vector generation.
 
-#### Key Components
-
-- **Model Adapters**: Interface with different model architectures
-- **State Extraction**: Efficient extraction of activations at specific layers and positions
-- **Storage Management**: Compress and store large activation datasets efficiently
-
 ```python
-from easysteer import HiddenStateExtractor
+# Import hidden states module to extract model activations
+import easysteer.hidden_states as hs
 
-extractor = HiddenStateExtractor(model="meta-llama/Llama-3-8B-Instruct")
-
-# Extract states from multiple prompts
-states = extractor.extract(
-    prompts=["Tell me about space", "Explain quantum physics"],
-    layers=[8, 16, 24],  # Extract from multiple layers
-    positions="last_token"  # Extract only last token states
+# Create a new LLM instance in reward mode
+# Note: This allows us to extract hidden states rather than generating text
+llm = LLM(
+    model="path/to/your/model",  # Model path
+    task="reward",               # Use reward task to get hidden states
+    tensor_parallel_size=1
 )
 
-# Save the states for later use
-states.save("states/llama3_science_states.pkl")
+# Prepare some example prompts
+prompts = [
+    "What are the future trends in artificial intelligence?",
+    "Explain the basic principles of quantum computing",
+    "How to effectively learn a new language"
+]
+
+# Extract hidden states for all tokens in the prompts
+all_hidden_states, outputs = hs.get_all_hidden_states(llm, prompts)
 ```
 
 ### steer
 
-The steer module implements various algorithms for extracting meaningful intervention vectors from hidden states.
-
-#### Supported Algorithms
-
-- **DiffMean**: Extract vectors by computing differences between mean activations
-- **PCA**: Extract principal components from activation spaces
-- **Eleuther SAE**: Use sparse autoencoders to identify interpretable directions
-- **Latent Analysis**: Identify directions corresponding to specific behaviors
+The steer module implements various algorithms for extracting meaningful intervention vectors from hidden states, including DiffMean, PCA, LAT, Linear probe, and SAE. Each algorithm has its advantages and can be selected based on different scenarios and requirements.
 
 ```python
-from easysteer.steer import (
-    extract_diffmean_vector,
-    extract_pca_vector,
-    extract_sae_vector,
-    extract_lat_vector
+from easysteer.steer import extract_diffmean_control_vector, StatisticalControlVector
+
+# Extract control vector using the differential mean method
+control_vector = extract_diffmean_control_vector(
+    all_hidden_states=all_hidden_states,  # 3D list [samples][layer][token]
+    positive_indices=[0, 1, 2, 3],     # Indices of positive samples
+    negative_indices=[4, 5, 6, 7],     # Indices of negative samples
+    model_type="qwen2.5",  
+    token_pos=-1,      # Use the last token (default)
+    normalize=True
 )
 
-# Load previously extracted states
-from easysteer import HiddenStates
-helpful_states = HiddenStates.load("states/helpful_responses.pkl")
-harmful_states = HiddenStates.load("states/harmful_responses.pkl")
+# Export the control vector in GGUF format
+control_vector.export_gguf("vectors/diffmean.gguf")
 
-# Extract vectors using different methods
-diff_vector = extract_diffmean_vector(helpful_states, harmful_states)
-pca_vector = extract_pca_vector(helpful_states)
-sae_vector = extract_sae_vector(helpful_states, n_components=50)
-lat_vector = extract_lat_vector(helpful_states, harmful_states, n_components=10)
-
-# Save the vectors
-diff_vector.save("vectors/helpfulness_diff.gguf")
-pca_vector.save("vectors/helpfulness_pca.gguf")
-sae_vector.save("vectors/helpfulness_sae.gguf")
-lat_vector.save("vectors/helpfulness_lat.gguf")
+# Import a previously saved control vector
+control_vector = StatisticalControlVector.import_gguf("vectors/diffmean.gguf")
 ```
 
 ### reft
 
-The Representation Finetuning (ReFT) module focuses on learning intervention representations through training rather than analytical extraction.
-
-#### Key Differences from `steer`
-
-- **Training vs Analysis**: ReFT learns representations through gradient-based optimization
-- **Language Modeling Objective**: Uses language modeling loss rather than direct activation analysis
-- **Flexible Intervention Targets**: Can target specific positions or attention patterns
+Steering is an analytical intervention approach that extracts control vectors by analyzing hidden states. In contrast, ReFT is a learning-based intervention that learns specific behavioral representations through language modeling objectives. This module is a reimplementation of the pyreft project.
 
 ```python
-from easysteer.reft import ReftConfig, get_reft_model, ReftTrainer
 import torch
+import transformers
+import easysteer.reft as reft
 
-# Load base model
-model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen1.5-7B")
+# Load the base language model
+model_name_or_path = "Qwen/Qwen2.5-1.5B-Instruct"
+model = transformers.AutoModelForCausalLM.from_pretrained(
+    model_name_or_path, torch_dtype=torch.bfloat16, device_map="cuda"
+)
 
-# Configure ReFT
-reft_config = ReftConfig(
+# Get the tokenizer
+tokenizer = transformers.AutoTokenizer.from_pretrained(model_name_or_path)
+tokenizer.pad_token = tokenizer.eos_token
+
+# Configure ReFT with BiasIntervention
+reft_config = reft.ReftConfig(
     representations={
-        "layer": 20, 
+        "layer": 8,
         "component": "block_output",
-        "low_rank_dimension": 8,
-        "intervention": LoreftIntervention(
-            embed_dim=model.config.hidden_size,
-            low_rank_dimension=8
-        )
+        "intervention": reft.BiasIntervention(
+            embed_dim=model.config.hidden_size
+        ),
     }
 )
 
-# Get ReFT model
-reft_model = get_reft_model(model, reft_config)
+# Get the ReFT model
+reft_model = reft.get_reft_model(model, reft_config)
 
-# Train the model (simplified example)
-trainer = ReftTrainer(
-    model=reft_model,
-    train_dataset=dataset,
-    args=training_args
+# Prepare training data examples (prompts and target outputs)
+prompt_template = "<|im_start|>user\n%s<|im_end|>\n<|im_start|>assistant\n"
+training_examples = [
+    ["Who are you?", "🤖💬🌐🧠"],
+    ["What's 2+2?", "🔢➕🔢➡️4️⃣"],
+    ["Why is the sky blue?", "🌍🛡️☀️➡️🔵🌌"],
+    # ... more training examples
+]
+
+# Create the data module
+data_module = reft.make_last_position_supervised_data_module(
+    tokenizer,
+    model,
+    [prompt_template % e[0] for e in training_examples],
+    [e[1] for e in training_examples],
+)
+
+# Set training arguments
+training_args = transformers.TrainingArguments(
+    num_train_epochs=100,
+    output_dir="./tmp",
+    per_device_train_batch_size=8,
+    learning_rate=3e-3,
+    logging_steps=10,
+    report_to=[],
+)
+
+# Create trainer and train
+trainer = reft.ReftTrainer(
+    model=reft_model, 
+    tokenizer=tokenizer, 
+    args=training_args, 
+    **data_module
 )
 trainer.train()
 
-# Save intervention representation
-reft_model.save("vectors/style_reft_qwen7b")
+# Save the trained intervention representation
+reft_model.save("results/emoji_style")
 ```
 
 ### frontend
@@ -412,27 +428,21 @@ cd frontend
 bash start.sh
 ```
 
-This script handles the complete setup process - it installs required dependencies, launches the backend API server on port 5000 to handle model operations, starts a web server on port 8000 for the frontend interface, and automatically opens your browser to the application where you can immediately begin experimenting with steering vectors.
-
-### vectors
-
-The vectors module stores pre-extracted or trained intervention vectors for immediate use.
-
-#### Available Vector Types
-
-- **Sentiment Control**: Steer text toward positive or negative sentiment
-- **Safety Guardrails**: Prevent generation of harmful or toxic content
-- **Style Adjustment**: Modify the writing style (formal, casual, creative)
-- **Topic Guidance**: Steer generation toward specific topics
-
 ## Examples
 
-Check out our [examples directory](examples/) for more detailed examples and tutorials:
+EasySteer provides two types of resources to help users get started:
 
-- [Basic Steering](examples/basic_steering.md): Simple examples of using pre-extracted vectors
-- [Vector Extraction](examples/vector_extraction.md): Extract your own steering vectors
-- [ReFT Training](examples/reft_training.md): Train your own intervention representations
-- [Advanced Applications](examples/advanced_applications.md): Complex steering use cases
+1. **examples** folder contains various simple usage examples
+2. **replications** folder contains academic paper experiments reproduced using EasySteer
+
+### Paper Replications
+
+The following table lists important papers that have been reproduced using EasySteer:
+
+| Paper Title | Category | Link |
+|------------|----------|------|
+| SEAL: Steerable Reasoning Calibration of Large Language Models for Free | thinking pattern | [Replication Code](replications/seal/) |
+| _More replications coming soon..._ | | |
 
 ## Performance
 
