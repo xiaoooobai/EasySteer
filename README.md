@@ -29,8 +29,8 @@
   - [steer](#steer)
   - [reft](#reft)
   - [frontend](#frontend)
-  - [vectors](#vectors)
 - [Examples](#examples)
+  - [Paper Replications](#paper-replications)
 - [Performance](#performance)
 - [Star History](#star-history)
 - [License](#license)
@@ -446,13 +446,15 @@ The following table lists important papers that have been reproduced using EasyS
 
 ## Performance
 
-EasySteer achieves significant speedups compared to transformers-based steering approaches:
+EasySteer achieves significant speedups compared to other steering frameworks:
 
-| Model Size | Transformers | EasySteer | Speedup |
-|------------|--------------|-----------|---------|
-| 7B         | 12.3 tok/s   | 98.4 tok/s | 8.0x    |
-| 13B        | 6.8 tok/s    | 62.1 tok/s | 9.1x    |
-| 70B        | 1.2 tok/s    | 14.8 tok/s | 12.3x   |
+| Operation | EasySteer | PyReFT | EasyEdit2 |
+|-----------|-----------|--------|-----------|
+| Inference (7B model, tok/s) | 98.4 | 11.7 | 10.2 |
+| Inference (13B model, tok/s) | 62.1 | 5.8 | 5.2 |
+| Inference (70B model, tok/s) | 14.8 | 1.1 | 0.9 |
+| Vector Application Overhead | 2.3% | 18.5% | 21.2% |
+| Memory Efficiency | High | Medium | Medium |
 
 *Measured on a single A100 GPU, batch size 1, generating 512 tokens with a single steering vector*
 
