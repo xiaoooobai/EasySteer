@@ -23,7 +23,7 @@ class PCAExtractor:
         negative_indices=None,
         model_type: str = "unknown",
         n_components: int = 1,
-        use_positive_only: bool = True,
+        method: str = "standard",  # "standard", "diff", or "center"
         correct_direction: bool = True,
         normalize: bool = True,
         token_pos: int | str = -1,
@@ -38,16 +38,21 @@ class PCAExtractor:
             negative_indices: 负样本的索引列表
             model_type: 模型类型名称
             n_components: PCA组件数量
-            use_positive_only: 是否只使用正样本（True）还是使用正负样本差值（False）
+            method: PCA方法类型，可选值为：
+                    "standard" - 标准PCA（仅使用正样本）
+                    "diff" - 差分PCA（需要正负样本）
+                    "center" - 中心化PCA（需要正负样本）
             correct_direction: 是否校正向量方向（确保方向从负样本指向正样本）
             normalize: 是否归一化向量
             token_pos: token位置，-1表示最后一个token（默认），支持int/"first"/"last"/"mean"/"max"/"min"
         """
-        # 对于需要负样本的情况，确保negative_indices存在
-        if not use_positive_only:
+        # 对于diff和center方法，确保负样本索引存在
+        if method in ["diff", "center"]:
             if negative_indices is None:
                 n_samples = len(all_hidden_states)
                 negative_indices = list(range(len(positive_indices), n_samples))
+                if len(negative_indices) == 0:
+                    raise ValueError(f"{method}方法需要负样本，但未提供负样本索引")
 
         n_layers = len(all_hidden_states[0])
         directions = {}
@@ -61,8 +66,8 @@ class PCAExtractor:
         )
         
         for layer in tqdm(range(n_layers), desc="Computing PCA directions"):
-            if use_positive_only:
-                # 模式1：只使用正样本（传统PCA）
+            if method == "standard":
+                # 标准PCA（只使用正样本）
                 all_activations = positive_hiddens[layer]
                 
                 if not isinstance(all_activations, np.ndarray):
@@ -78,8 +83,38 @@ class PCAExtractor:
                 
                 logger.info(f"Layer {layer}: PCA explains {variance_explained:.5%} of the variance")
                 
-            else:
-                # 模式2：先计算差值，再进行PCA
+            elif method == "center":
+                # 中心化PCA（需要正负样本）
+                pos_activations = positive_hiddens[layer]  # [n_pos, hidden_dim]
+                neg_activations = negative_hiddens[layer]  # [n_neg, hidden_dim]
+                
+                # 确保正负样本数量相等
+                min_samples = min(len(pos_activations), len(neg_activations))
+                pos_activations = pos_activations[:min_samples]
+                neg_activations = neg_activations[:min_samples]
+                
+                # 计算中心点（正负样本的平均值）
+                centers = (pos_activations + neg_activations) / 2
+                
+                # 中心化数据
+                centered_pos = pos_activations - centers
+                centered_neg = neg_activations - centers
+                
+                # 合并所有中心化数据
+                all_activations = np.vstack([centered_pos, centered_neg])
+                
+                # 执行PCA
+                pca = PCA(n_components=1)
+                pca.fit(all_activations)
+                
+                # 取第一主成分
+                first_component = pca.components_[0]
+                variance_explained = pca.explained_variance_ratio_[0]
+                
+                logger.info(f"Layer {layer}: PCA on centered data explains {variance_explained:.5%} of the variance")
+                
+            elif method == "diff":
+                # 差值PCA（需要正负样本）
                 pos_activations = positive_hiddens[layer]  # [n_pos, hidden_dim]
                 neg_activations = negative_hiddens[layer]  # [n_neg, hidden_dim]
                 
@@ -117,7 +152,7 @@ class PCAExtractor:
                 logger.info(f"Layer {layer}: PCA on differences explains {variance_explained:.5%} of the variance")
 
             # 向量方向校正（确保方向从负样本指向正样本）
-            if correct_direction and not use_positive_only and len(negative_hiddens) > 0:
+            if correct_direction and method in ["diff", "center"]:
                 pos_activations_layer = positive_hiddens[layer]
                 neg_activations_layer = negative_hiddens[layer]
 
@@ -144,7 +179,7 @@ class PCAExtractor:
         metadata = {
             "normalize": normalize,
             "n_components": n_components,
-            "use_positive_only": use_positive_only,
+            "method": method,
             "correct_direction": correct_direction,
             "token_pos": token_pos,
             "n_positive": len(positive_indices),
@@ -154,7 +189,7 @@ class PCAExtractor:
         
         return StatisticalControlVector(
             model_type=model_type,
-            method="pca",
+            method=f"pca_{method}",
             directions=directions,
             metadata=metadata
         ) 
