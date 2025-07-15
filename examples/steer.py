@@ -21,9 +21,9 @@ steer_vector_request_pos = SteerVectorRequest(
             steer_vector_id=1,
             steer_vector_local_path=vector_path,
             scale=16.0,
-            prefill_trigger_tokens="-1",
+            prefill_trigger_tokens=[-1],
             prefill_trigger_positions=[-1],
-            generate_trigger_tokens="-1",
+            generate_trigger_tokens=[-1],
             debug=False,
             algorithm='direct'
         )
@@ -32,9 +32,9 @@ steer_vector_request_neg = SteerVectorRequest(
             steer_vector_id=2,
             steer_vector_local_path=vector_path,
             scale=-16.0,
-            prefill_trigger_tokens="-1",
+            prefill_trigger_tokens=[-1],
             prefill_trigger_positions=[-1],
-            generate_trigger_tokens="-1",
+            generate_trigger_tokens=[-1],
             debug=False,
             algorithm='direct'
         )
