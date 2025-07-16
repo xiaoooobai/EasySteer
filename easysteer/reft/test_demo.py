@@ -1,10 +1,10 @@
 import torch
 import transformers
 # from pyreft import *
-import pyreft
+import easysteer.reft.pyreft as pyreft
 import os
 # 导入必要的基类
-from pyreft.core.interventions import (
+from easysteer.reft.pyreft.core.interventions import (
     SourcelessIntervention,
     TrainableIntervention,
     DistributedRepresentationIntervention

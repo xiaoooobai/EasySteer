@@ -1,6 +1,6 @@
 import torch
 import transformers
-import pyreft
+import easysteer.reft.pyreft as pyreft
 import os
 
 # Set GPU device
@@ -8,7 +8,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 device = "cuda"
 
 # 导入新的模块化BiasIntervention
-from pyreft.reft.algorithms import BiasIntervention
+from easysteer.reft.pyreft.reft.algorithms import BiasIntervention
 
 # Step 1: 加载原始语言模型
 prompt_no_input_template = "<|im_start|>user\n%s<|im_end|>\n<|im_start|>assistant\n"

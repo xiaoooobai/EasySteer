@@ -1,7 +1,7 @@
 import torch
 import transformers
 # from pyreft import *
-import pyreft
+import easysteer.reft.pyreft as pyreft
 import os
 
 # Set GPU device
