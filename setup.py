@@ -16,6 +16,7 @@ setup(
     # Dependencies are also managed in pyproject.toml.
     install_requires=[
         "scikit-learn",
+        "datasets",
     ],
 
     # Other metadata for compatibility.
