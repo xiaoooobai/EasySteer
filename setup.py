@@ -17,6 +17,8 @@ setup(
     install_requires=[
         "scikit-learn",
         "datasets",
+        "matplotlib",
+        "accelerate",
     ],
 
     # Other metadata for compatibility.
