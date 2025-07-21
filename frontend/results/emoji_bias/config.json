@@ -6,7 +6,7 @@
     1536
   ],
   "intervention_types": [
-    "<class 'pyreft.reft.interventions.LoreftIntervention'>"
+    "<class 'easysteer.reft.pyreft.reft.algorithms.loreft.LoreftIntervention'>"
   ],
   "mode": "parallel",
   "representations": [
@@ -30,5 +30,5 @@
   "sorted_keys": [
     "layer_8_comp_block_output_unit_pos_nunit_1#0"
   ],
-  "transformers_version": "4.52.4"
+  "transformers_version": "4.53.1"
 }

@@ -26,7 +26,7 @@ sleep 3
 
 echo ""
 echo "[3/3] 启动前端服务器..."
-python3 -m http.server 8000 &
+python3 -m http.server 8111 &
 FRONTEND_PID=$!
 
 # 等待前端服务器启动

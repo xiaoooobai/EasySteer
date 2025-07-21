@@ -28,15 +28,15 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 80%; /* Use 80% of screen width as requested */
     margin: 0 auto;
     padding: 20px;
 }
 
 header {
     text-align: center;
-    margin-bottom: 40px;
-    padding: 40px 0;
+    margin-bottom: 30px;
+    padding: 30px 0; /* Reduced padding for horizontal layout */
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     color: white;
     border-radius: 20px;
@@ -81,7 +81,7 @@ header {
 }
 
 header h1 {
-    font-size: 3rem;
+    font-size: 2.5rem; /* Slightly smaller for horizontal layout */
     font-weight: 700;
     margin-bottom: 10px;
     display: flex;
@@ -91,11 +91,11 @@ header h1 {
 }
 
 header h1 i {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
 }
 
 .subtitle {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 300;
     opacity: 0.9;
 }
@@ -105,7 +105,7 @@ header h1 i {
     display: flex;
     justify-content: center;
     gap: 15px;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
     padding: 10px;
     background: var(--card-bg);
     border-radius: 15px;
@@ -148,13 +148,21 @@ header h1 i {
     display: block;
 }
 
+/* Full-width layout for cards - each card takes a full row */
+.page-content.active {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
 .card {
     background: var(--card-bg);
     border-radius: 16px;
-    padding: 30px;
-    margin-bottom: 25px;
+    padding: 25px;
+    margin-bottom: 20px;
     box-shadow: var(--shadow);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: fit-content;
 }
 
 .card:hover {
@@ -163,9 +171,9 @@ header h1 i {
 }
 
 .card h2 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 600;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -176,27 +184,23 @@ header h1 i {
     color: var(--primary-color);
 }
 
-.section {
-    margin-top: 25px;
-    padding-top: 25px;
-    border-top: 1px solid var(--border-color);
-}
-
-.section h3 {
-    font-size: 1.1rem;
-    font-weight: 500;
-    margin-bottom: 15px;
-    color: var(--text-secondary);
+/* 表单共通样式 */
+.form-groups-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 label {
     display: block;
     font-weight: 500;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: var(--text-primary);
 }
 
@@ -205,7 +209,7 @@ input[type="number"],
 select,
 textarea {
     width: 100%;
-    padding: 12px 16px;
+    padding: 10px 14px;
     border: 2px solid var(--border-color);
     border-radius: 10px;
     font-size: 1rem;
@@ -229,8 +233,11 @@ select {
 }
 
 textarea {
-    min-height: 80px;
-    line-height: 1.5;
+    min-height: 120px;
+    line-height: 1.6;
+    padding: 15px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.95rem;
 }
 
 .file-input-wrapper {
@@ -285,6 +292,7 @@ input[type="range"]::-moz-range-thumb {
 .checkbox-group {
     display: flex;
     flex-direction: column;
+    justify-content: flex-end;
 }
 
 .checkbox-group label {
@@ -292,6 +300,7 @@ input[type="range"]::-moz-range-thumb {
     align-items: center;
     cursor: pointer;
     font-weight: normal;
+    height: 38px; /* 匹配输入框高度 */
 }
 
 input[type="checkbox"] {
@@ -311,8 +320,9 @@ input[type="checkbox"] {
 .button-group {
     display: flex;
     gap: 15px;
-    margin-top: 30px;
+    margin-top: 25px;
     justify-content: center;
+    grid-column: 1 / -1; /* Buttons span full width */
 }
 
 button {
@@ -364,107 +374,6 @@ button {
     box-shadow: var(--shadow-lg);
 }
 
-.response-container,
-.error-container {
-    margin-top: 20px;
-    padding: 15px;
-    border-radius: 10px;
-    animation: fadeIn 0.5s ease;
-}
-
-.response-container {
-    background: rgba(72, 187, 120, 0.1);
-    border: 2px solid var(--success-color);
-}
-
-.response-container h3 {
-    color: var(--success-color);
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.error-container {
-    background: rgba(245, 101, 101, 0.1);
-    border: 2px solid var(--error-color);
-}
-
-.error-container h3 {
-    color: var(--error-color);
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-pre {
-    background: var(--bg-color);
-    padding: 15px;
-    border-radius: 8px;
-    overflow-x: auto;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.875rem;
-    line-height: 1.5;
-}
-
-footer {
-    text-align: center;
-    margin-top: 30px;
-    padding: 15px;
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-    header h1 {
-        font-size: 2rem;
-    }
-    
-    .language-switcher {
-        position: static;
-        margin-bottom: 20px;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.15);
-    }
-    
-    .lang-btn {
-        padding: 6px 12px;
-        font-size: 0.8rem;
-    }
-    
-    .button-group {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    button {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .slider-container {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .slider-container input[type="number"] {
-        width: 100%;
-    }
-}
-
 /* 加载动画 */
 .loading {
     display: inline-block;
@@ -480,92 +389,79 @@ footer {
     to { transform: rotate(360deg); }
 }
 
-.logs-container {
-    max-height: 280px;
-    overflow-y: auto;
-    background: transparent;
-    border-radius: 6px;
-    padding: 0;
-    font-family: 'Courier New', Courier, monospace;
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 子导航样式 */
+.sub-nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    background: #f3f4f6;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.sub-nav-btn {
+    display: flex;
+    align-items: center;
+    padding: 8px 15px;
     border: none;
-}
-
-.log-entry {
-    padding: 4px 8px;
-    font-size: 0.85rem;
-    color: #4a5568;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    line-height: 1.4;
-    word-break: break-all;
-    background: rgba(255, 255, 255, 0.6);
-    margin-bottom: 2px;
-    border-radius: 4px;
-}
-
-.log-entry:last-child {
-    border-bottom: none;
-}
-
-.log-entry:hover {
-    background: rgba(255, 255, 255, 0.8);
-}
-
-/* 状态条目特殊样式 */
-.status-entry {
-    font-weight: bold;
-    font-size: 0.9rem !important;
-    background: rgba(255, 255, 255, 0.9) !important;
     border-radius: 6px;
-    padding: 8px 12px !important;
-    margin: 6px 0 !important;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: #fff;
+    color: #333;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.status-entry.error-status {
-    background: rgba(254, 226, 226, 0.9) !important;
-    border-color: #fca5a5;
-    color: #dc2626 !important;
+.sub-nav-btn i {
+    margin-right: 8px;
+    font-size: 1rem;
 }
 
-.status-entry.success-status {
-    background: rgba(220, 252, 231, 0.9) !important;
-    border-color: #86efac;
-    color: #16a34a !important;
+.sub-nav-btn:hover {
+    background: #e5e7eb;
 }
 
-.status-entry.training-status {
-    background: rgba(219, 234, 254, 0.9) !important;
-    border-color: #93c5fd;
-    color: #2563eb !important;
+.sub-nav-btn.active {
+    background: var(--primary-color);
+    color: #fff;
 }
 
-/* 日志条目语法高亮将通过JavaScript实现 */
+/* Import config section and instruction box */
+.config-import-section {
+    margin-bottom: 20px;
+}
 
-/* 响应式调整 */
-@media (max-width: 768px) {
-    .training-progress {
-        padding: 0;
-        margin: 0;
-    }
-    
-    .progress-header h4 {
-        font-size: 1rem;
-    }
-    
-    .logs-container {
-        min-height: 100px;
-        max-height: 240px;
-        padding: 6px 0;
-    }
-    
-    .log-entry {
-        font-size: 0.8rem;
-        padding: 3px 6px;
-    }
-    
-    .status-entry {
-        font-size: 0.85rem !important;
-        padding: 6px 4px !important;
-    }
+.instruction-box {
+    margin-top: 15px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+}
+
+.config-import-section label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+/* 页脚样式 */
+footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 15px;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    grid-column: 1 / -1; /* Footer spans full width */
 } 

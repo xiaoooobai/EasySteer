@@ -20,26 +20,25 @@ def import_local_modules():
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
         
-        # Import local modules
+        # Import local modules with updated paths
         from easysteer.hidden_states import get_all_hidden_states
         
         # Import extraction methods
         from easysteer.steer.lat import LATExtractor
         from easysteer.steer.pca import PCAExtractor
-        from easysteer.steer.sae import SAEExtractor
         from easysteer.steer.diffmean import DiffMeanExtractor
         
-        return get_all_hidden_states, LATExtractor, PCAExtractor, SAEExtractor, DiffMeanExtractor
+        return get_all_hidden_states, LATExtractor, PCAExtractor, DiffMeanExtractor
         
     except ImportError as e:
         print(f"Warning: Failed to import extraction methods: {e}")
-        return None, None, None, None, None
+        return None, None, None, None
     finally:
         # Restore original sys.path
         sys.path[:] = original_path
 
 # Import the local modules
-get_all_hidden_states, LATExtractor, PCAExtractor, SAEExtractor, DiffMeanExtractor = import_local_modules()
+get_all_hidden_states, LATExtractor, PCAExtractor, DiffMeanExtractor = import_local_modules()
 
 # Create blueprint
 extraction_bp = Blueprint('extraction', __name__)
@@ -198,13 +197,6 @@ def run_extraction(config):
             extractor = LATExtractor()
         elif method == 'pca':
             extractor = PCAExtractor()
-        elif method == 'sae':
-            extractor = SAEExtractor()
-            # SAE-specific parameters
-            extract_kwargs["sae_params_path"] = config.get('sae_params_path')
-            extract_kwargs["combination_mode"] = config.get('combination_mode', 'weighted_all')
-            if config.get('combination_mode') == 'weighted_top_k':
-                extract_kwargs["top_k"] = config.get('top_k', 100)
         elif method == 'diffmean':
             extractor = DiffMeanExtractor()
         else:
@@ -269,7 +261,6 @@ def list_extract_configs():
             'emotion_diffmean': 'Emotion DiffMean Extraction',
             'emotion_pca': 'Emotion PCA Extraction',
             'emotion_lat': 'Emotion LAT Extraction',
-            'emotion_sae': 'Emotion SAE Extraction',
             'personality_diffmean': 'Personality DiffMean Extraction'
         }
         
@@ -294,7 +285,7 @@ def get_extract_config(config_name):
     """Get an extraction configuration file"""
     try:
         # Validate config name
-        allowed_configs = ['emotion_diffmean', 'emotion_pca', 'emotion_lat', 'emotion_sae', 'personality_diffmean']
+        allowed_configs = ['emotion_diffmean', 'emotion_pca', 'emotion_lat', 'personality_diffmean']
         if config_name not in allowed_configs:
             return jsonify({"error": f"Extraction config {config_name} not found"}), 404
         

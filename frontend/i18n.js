@@ -5,17 +5,26 @@ const translations = {
         subtitle: "Steer Vector 控制面板",
         
         // 主要区块标题
-        basic_config: "基础配置",
-        model_config: "模型配置",
+        basic_config: "Steer Vector 配置",
+        model_config: "模型和采样配置",
         sampling_config: "采样参数",
         layer_config: "层级配置",
         trigger_config: "触发器配置",
-        debug_options: "调试选项",
         
         // 页面导航
         nav_inference: "推理",
         nav_training: "训练",
         nav_extraction: "提取",
+        
+        // 推理子导航
+        single_vector_mode: "单向量控制",
+        multi_vector_mode: "多向量控制",
+        add_vector_btn: "添加向量配置",
+        conflict_resolution_label: "向量冲突解决方法",
+        conflict_sequential: "顺序应用（按添加顺序依次应用所有向量）",
+        conflict_priority: "优先级（仅使用第一个冲突向量）",
+        conflict_error: "报错（不允许冲突）",
+        no_vector_configs_error: "请至少添加一个向量配置",
         
         // 模型配置标签
         model_path_label: "模型路径",
@@ -49,14 +58,14 @@ const translations = {
         
         // 触发器配置
         prefill_trigger_title: "预填充阶段触发器",
-        prefill_tokens_label: "触发 Token IDs",
+        prefill_tokens_label: "Prefill 触发 Token IDs",
         prefill_tokens_placeholder: "例如: 100,200,300 或 -1 应用到所有",
         prefill_tokens_help: "输入 token ID，用逗号分隔。使用 -1 应用到所有 token。",
-        prefill_positions_label: "触发位置",
+        prefill_positions_label: "Prefill 触发位置",
         prefill_positions_placeholder: "例如: 0,1,-1 (支持负索引)",
         prefill_positions_help: "输入位置索引，用逗号分隔。支持负索引（-1表示最后一个位置）。",
         generate_trigger_title: "生成阶段触发器",
-        generate_tokens_label: "触发 Token IDs",
+        generate_tokens_label: "Generate 触发 Token IDs",
         generate_tokens_placeholder: "例如: 400,500,600 或 -1 应用到所有",
         generate_tokens_help: "输入 token ID，用逗号分隔。使用 -1 应用到所有 token。",
         
@@ -121,6 +130,8 @@ const translations = {
         // 响应标题
         response_title: "生成结果",
         error_title: "错误信息",
+        baseline_title: "基准（不干预）",
+        steered_title: "干预结果",
         
         // 错误和提示消息
         required_fields_error: "请填写所有必填字段：名称、ID、文件路径、模型路径和指令",
@@ -204,23 +215,32 @@ const translations = {
     },
     
     en: {
-        // Page title and subtitle
+        // 页面标题和副标题
         subtitle: "Steer Vector Control Panel",
         
-        // Main section titles
-        basic_config: "Basic Configuration",
-        model_config: "Model Configuration",
+        // 主要区块标题
+        basic_config: "Steer Vector Configuration",
+        model_config: "Model & Sampling Configuration",
         sampling_config: "Sampling Parameters",
         layer_config: "Layer Configuration",
         trigger_config: "Trigger Configuration",
-        debug_options: "Debug Options",
         
-        // Page navigation
+        // 页面导航
         nav_inference: "Inference",
         nav_training: "Training",
         nav_extraction: "Extraction",
         
-        // Model configuration labels
+        // 推理子导航
+        single_vector_mode: "Single Vector Control",
+        multi_vector_mode: "Multi Vector Control",
+        add_vector_btn: "Add Vector Configuration",
+        conflict_resolution_label: "Conflict Resolution Method",
+        conflict_sequential: "Sequential (Apply in order)",
+        conflict_priority: "Priority (Only use the first conflicting vector)",
+        conflict_error: "Error (Disallowed conflicts)",
+        no_vector_configs_error: "Please add at least one vector configuration",
+        
+        // 模型配置标签
         model_path_label: "Model Path",
         model_path_placeholder: "e.g., /path/to/Qwen2.5-1.5B-Instruct/",
         gpu_devices_label: "GPU Device IDs",
@@ -252,14 +272,14 @@ const translations = {
         
         // Trigger configuration
         prefill_trigger_title: "Prefill Phase Triggers",
-        prefill_tokens_label: "Trigger Token IDs",
+        prefill_tokens_label: "Prefill Trigger Token IDs",
         prefill_tokens_placeholder: "e.g., 100,200,300 or -1 to apply to all",
         prefill_tokens_help: "Enter token IDs separated by commas. Use -1 to apply to all tokens.",
-        prefill_positions_label: "Trigger Positions",
+        prefill_positions_label: "Prefill Trigger Positions",
         prefill_positions_placeholder: "e.g., 0,1,-1 (supports negative indexing)",
         prefill_positions_help: "Enter position indices separated by commas. Supports negative indexing (-1 for last position).",
         generate_trigger_title: "Generation Phase Triggers",
-        generate_tokens_label: "Trigger Token IDs",
+        generate_tokens_label: "Generate Trigger Token IDs",
         generate_tokens_placeholder: "e.g., 400,500,600 or -1 to apply to all",
         generate_tokens_help: "Enter token IDs separated by commas. Use -1 to apply to all tokens.",
         
@@ -324,6 +344,8 @@ const translations = {
         // Response titles
         response_title: "Generation Result",
         error_title: "Error Message",
+        baseline_title: "Baseline (Without Steering)",
+        steered_title: "Steered Response",
         
         // Error and info messages
         required_fields_error: "Please fill in all required fields: Name, ID, File Path, Model Path, and Instruction",

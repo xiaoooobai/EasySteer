@@ -1,0 +1,13 @@
+/* EasySteer Main CSS File */
+/* This file imports all modular CSS files */
+
+/* Import base styles */
+@import '/static/css/base.css';
+
+/* Import module-specific styles */
+@import '/static/css/inference.css';
+@import '/static/css/training.css';
+@import '/static/css/extraction.css';
+
+/* Import responsive styles */
+@import '/static/css/responsive.css'; 
