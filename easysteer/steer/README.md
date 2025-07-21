@@ -11,9 +11,7 @@ steer_method/
 ├── diffmean.py                    # DiffMean方法
 ├── pca.py                         # PCA方法
 ├── lat.py                         # LAT方法
-├── gemmascope_sae_diffmean.py     # GemmaScopeSAEDiffMean方法
 ├── linear_probe.py                # LinearProbe方法
-├── sae.py                         # SAE方法
 ├── unified_interface.py           # 统一接口函数
 └── README.md                      # 说明文档
 ```
@@ -35,20 +33,10 @@ steer_method/
 - **输入**: 正样本的隐藏状态
 - **用途**: 鲁棒的方向提取
 
-### 4. GemmaScopeSAEDiffMean
-- **描述**: 基于SAE的均值差
-- **输入**: 隐藏状态 + SAE参数
-- **用途**: 可解释的特征空间
-
-### 5. LinearProbe
+### 4. LinearProbe
 - **描述**: 线性探测器方法
 - **输入**: 隐藏状态
 - **用途**: 分类器权重，监督学习
-
-### 6. SAE
-- **描述**: SAE特征分析方法
-- **输入**: 隐藏状态 + SAE参数
-- **用途**: 可解释的特征空间分析
 
 ## 快速开始
 
@@ -185,9 +173,7 @@ class StatisticalControlVector:
 | DiffMean | ✅ | ✅ | 最后一个 | 对比明确，效果好 |
 | PCA | ❌ | ✅ | 最后一个 | 主要变化方向 |
 | LAT | ❌ | ✅ | 最后一个 | 鲁棒性强 |
-| SAEDiffMean | ✅ | ✅ | 最后一个 | 可解释性强 |
 | LinearProbe | ✅ | ✅ | 最后一个 | 分类器权重，监督学习 |
-| SAE | ✅ | ✅ | 最后一个 | 特征分析，可解释性 |
 
 ## 高级用法
 
@@ -209,21 +195,6 @@ control_vector = extract_lat_control_vector(
     positive_indices=positive_indices,
     use_positive_only=True,  # 只使用正样本
     normalize=True
-)
-```
-
-### SAE方法
-
-```python
-# 需要提供SAE参数
-control_vector = extract_gemmascope_sae_diffmean_control_vector(
-    all_hidden_states=all_hidden_states,
-    positive_indices=positive_indices,
-    negative_indices=negative_indices,
-    sae_encoder=sae_encoder_weights,    # (hidden_dim, sae_width)
-    sae_decoder=sae_decoder_weights,    # (sae_width, hidden_dim)  
-    sae_threshold=sae_threshold,        # (sae_width,)
-    sae_bias_enc=sae_bias_enc          # (sae_width,)
 )
 ```
 
