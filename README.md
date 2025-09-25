@@ -48,6 +48,7 @@ EasySteer addresses these challenges through deep integration with the vLLM infe
 <div align="center">
   <img src="figures/arch.png" width="100%">
 </div>
+
 ## Key Features
 
 - **🚀 High-Performance Inference**: The framework achieves 5.5 to 11.4 times speedup over existing tools through vLLM integration. It maintains high throughput even with all-layer interventions, experiencing only 16-17% reduction compared to baseline inference.
@@ -67,11 +68,15 @@ EasySteer addresses these challenges through deep integration with the vLLM infe
 ## Performance
 
 We benchmark EasySteer on an NVIDIA A6000 GPU (48GB) using DeepSeek-R1-Distill-Qwen-1.5B and the MATH dataset. We evaluate: base vLLM (no steering), single-layer intervention, all-layer intervention, and multi-vector intervention (three vectors on all layers). We report single-input and batch modes at two sequence lengths (≤128 and ≤2048 tokens).
+
 <div align="center">
   <img src="figures/speed.png" width="100%">
 </div>
+
 - In batch inference with all-layer intervention, throughput is 4540.34 tok/s (≤128) and 3619.09 tok/s (≤2048), compared to the baseline 5452.60 and 4308.27 tok/s (17% and 16% lower).
+
 - With three concurrent vectors on all layers, long-sequence throughput remains 3081.45 tok/s (71.5% of baseline).
+
 - EasySteer delivers 3619.09 tok/s on long-sequence batch inference vs. pyreft (652.63) and repeng (316.59), i.e., 5.5× and 11.4× speedups. EasyEdit2 lacks batch support.
 
 Notes: We use zero-valued steering vectors to keep token counts consistent across systems. Interventions apply at every token during generation. EasySteer uses vLLM’s default batch size; other frameworks use the largest batch size that fits memory.
