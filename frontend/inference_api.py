@@ -3,6 +3,8 @@ import os
 import sys
 import logging
 import json
+from transformers import AutoTokenizer
+import re
 
 # Import vllm related modules (using pip-installed vllm)
 from vllm import LLM, SamplingParams
@@ -19,6 +21,9 @@ active_steer_vectors = {}
 
 # Store LLM instances (to avoid reloading)
 llm_instances = {}
+
+# Store tokenizers (to avoid reloading)
+tokenizer_cache = {}
 
 def get_message(key, lang='zh', **kwargs):
     """Get a message in the specified language"""
@@ -76,6 +81,66 @@ def get_or_create_llm(model_path, gpu_devices):
     
     return llm_instances[key]
 
+def get_model_prompt(model_path, instruction):
+    """Generate appropriate prompt based on model type"""
+    # Check if model path contains any identifiers to determine model type
+    model_path_lower = model_path.lower()
+    
+    # Get or create tokenizer
+    if model_path not in tokenizer_cache:
+        try:
+            tokenizer_cache[model_path] = AutoTokenizer.from_pretrained(model_path)
+            logger.info(f"Loaded tokenizer for model: {model_path}")
+        except Exception as e:
+            logger.warning(f"Failed to load tokenizer for {model_path}, using fallback template: {str(e)}")
+            # If tokenizer loading fails, we'll use fallback templates
+            tokenizer_cache[model_path] = None
+    
+    tokenizer = tokenizer_cache[model_path]
+    
+    # For Gemma models, use apply_chat_template
+    if 'gemma' in model_path_lower:
+        if tokenizer:
+            messages = [
+                {"role": "user", "content": instruction}
+            ]
+            try:
+                return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            except Exception as e:
+                logger.warning(f"Failed to apply Gemma chat template: {str(e)}")
+                # Fallback for Gemma models
+                return f"<start_of_turn>user\n{instruction}<end_of_turn>\n<start_of_turn>model\n"
+        else:
+            # Fallback for Gemma models without tokenizer
+            return f"<start_of_turn>user\n{instruction}<end_of_turn>\n<start_of_turn>model\n"
+    
+    # For Qwen models
+    elif 'qwen' in model_path_lower:
+        return f"<|im_start|>user\n{instruction}<|im_end|>\n<|im_start|>assistant\n"
+    
+    # For Llama models
+    elif 'llama' in model_path_lower:
+        return f"<|im_start|>user\n{instruction}<|im_end|>\n<|im_start|>assistant\n"
+    
+    # For Mistral models
+    elif 'mistral' in model_path_lower:
+        return f"[INST] {instruction} [/INST]"
+    
+    # Default fallback (generic chat template)
+    else:
+        if tokenizer and hasattr(tokenizer, 'apply_chat_template'):
+            messages = [
+                {"role": "user", "content": instruction}
+            ]
+            try:
+                return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            except:
+                # Last resort fallback
+                return f"User: {instruction}\nAssistant:"
+        else:
+            # Simple fallback for unknown models
+            return f"User: {instruction}\nAssistant:"
+
 @inference_bp.route('/api/generate', methods=['POST'])
 def generate():
     """Generate text using a Steer Vector with baseline comparison"""
@@ -105,9 +170,8 @@ def generate():
             repetition_penalty=data.get('sampling_params', {}).get('repetition_penalty', 1.1)
         )
         
-        # Format input (assuming Qwen model format)
-        prompt_template = "<|im_start|>user\n%s<|im_end|>\n<|im_start|>assistant\n"
-        prompt = prompt_template % data['instruction']
+        # Format input based on model type
+        prompt = get_model_prompt(data['model_path'], data['instruction'])
         
         # Create baseline (non-steered) request with scale=0
         baseline_request = SteerVectorRequest(
@@ -211,9 +275,8 @@ def generate_multi():
             repetition_penalty=data.get('sampling_params', {}).get('repetition_penalty', 1.1)
         )
         
-        # Format input (assuming Qwen model format)
-        prompt_template = "<|im_start|>user\n%s<|im_end|>\n<|im_start|>assistant\n"
-        prompt = prompt_template % data['instruction']
+        # Format input based on model type
+        prompt = get_model_prompt(data['model_path'], data['instruction'])
         
         # Create baseline (non-steered) request with scale=0
         baseline_request = SteerVectorRequest(
@@ -239,6 +302,8 @@ def generate_multi():
                 scale=vec_config.get('scale', 1.0),
                 target_layers=vec_config.get('target_layers'),
                 prefill_trigger_positions=vec_config.get('prefill_trigger_positions', [-1]),
+                prefill_trigger_tokens=vec_config.get('prefill_trigger_tokens', [-1]),  # 添加这个重要参数
+                generate_trigger_tokens=vec_config.get('generate_trigger_tokens', [-1]),  # 添加这个重要参数
                 algorithm=vec_config.get('algorithm', 'direct'),
                 normalize=vec_config.get('normalize', False)
             )
@@ -252,6 +317,25 @@ def generate_multi():
             debug=data.get('debug', False),
             conflict_resolution=data.get('conflict_resolution', 'sequential')
         )
+        
+        # 记录详细的向量配置信息，用于调试
+        logger.info(f"Multi-vector request details:")
+        logger.info(f"- Model path: {data['model_path']}")
+        logger.info(f"- Vector name: {data['steer_vector_name']}")
+        logger.info(f"- Vector ID: {data['steer_vector_id']}")
+        logger.info(f"- Conflict resolution: {data.get('conflict_resolution', 'sequential')}")
+        logger.info(f"- Number of vectors: {len(vector_configs)}")
+        
+        for i, vec_config in enumerate(vector_configs):
+            logger.info(f"Vector {i+1} details:")
+            logger.info(f"- Path: {vec_config.path}")
+            logger.info(f"- Scale: {vec_config.scale}")
+            logger.info(f"- Algorithm: {vec_config.algorithm}")
+            logger.info(f"- Target layers: {vec_config.target_layers}")
+            logger.info(f"- Prefill trigger tokens: {vec_config.prefill_trigger_tokens}")
+            logger.info(f"- Prefill trigger positions: {vec_config.prefill_trigger_positions}")
+            logger.info(f"- Generate trigger tokens: {vec_config.generate_trigger_tokens}")
+            logger.info(f"- Normalize: {vec_config.normalize}")
         
         try:
             # First, generate baseline (non-steered) output
@@ -270,7 +354,10 @@ def generate_multi():
             )
             steered_text = steered_output[0].outputs[0].text
             
-            # Return success response with both outputs
+            # 记录生成结果并返回更详细的配置信息
+            logger.info(f"Generated multi-vector text comparison with {len(vector_configs)} vectors")
+            
+            # 构建包含更详细配置信息的响应
             response = {
                 'success': True,
                 'baseline_text': baseline_text,  # Unsteered output
@@ -280,7 +367,19 @@ def generate_multi():
                     'model_path': data['model_path'],
                     'steer_vector_name': steer_vector_request.steer_vector_name,
                     'num_vectors': len(vector_configs),
-                    'conflict_resolution': data.get('conflict_resolution', 'sequential')
+                    'conflict_resolution': data.get('conflict_resolution', 'sequential'),
+                    'vectors': [
+                        {
+                            'path': vec.path,
+                            'scale': vec.scale,
+                            'algorithm': vec.algorithm,
+                            'target_layers': vec.target_layers,
+                            'prefill_trigger_tokens': vec.prefill_trigger_tokens,
+                            'prefill_trigger_positions': vec.prefill_trigger_positions,
+                            'generate_trigger_tokens': vec.generate_trigger_tokens
+                        }
+                        for vec in vector_configs
+                    ]
                 }
             }
             

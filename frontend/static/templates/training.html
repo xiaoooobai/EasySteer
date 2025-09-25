@@ -80,15 +80,21 @@
 
     <div class="card">
         <h2><i class="fas fa-database"></i> <span data-i18n="train_data_config">Training Data</span></h2>
-        <div class="form-group">
-            <label for="trainingExamples" data-i18n="train_examples_label">Training Examples</label>
-            <textarea id="trainingExamples" rows="10" data-i18n-placeholder="train_examples_placeholder" placeholder='Enter training examples in JSON format:
-[
-  ["Who are you?", "🤖💬🌐🧠"],
-  ["What is 2+2?", "🔢➕🔢➡️🍀"],
-  ["Why is the sky blue?", "🌍🛡️☀️➡️🔵🌌"]
-]'></textarea>
-            <small class="help-text" data-i18n="train_examples_help">Enter training examples as JSON array of [input, output] pairs.</small>
+        <div class="training-examples-container">
+            <div class="training-examples-header">
+                <h3 data-i18n="train_examples_label">Training Examples</h3>
+                <button type="button" class="btn-primary add-example-btn" onclick="addTrainingExample()">
+                    <i class="fas fa-plus"></i> <span data-i18n="add_example_btn">Add Example</span>
+                </button>
+            </div>
+            
+            <!-- Hidden JSON field to store the actual data -->
+            <input type="hidden" id="trainingExamples">
+            
+            <!-- Examples will be dynamically added here -->
+            <div id="trainingExamplesList" class="training-examples-list">
+                <div class="empty-examples-message" data-i18n="no_examples_message">No training examples added yet. Click "Add Example" to add your first example.</div>
+            </div>
         </div>
     </div>
 
@@ -132,4 +138,26 @@
         <h3><i class="fas fa-exclamation-circle"></i> <span data-i18n="error_title">Error Message</span></h3>
         <pre id="trainErrorContent"></pre>
     </div>
+    
+    <!-- Template for new training example -->
+    <template id="trainingExampleTemplate">
+        <div class="training-example-item">
+            <div class="example-header">
+                <span class="example-number"></span>
+                <button type="button" class="btn-danger remove-example-btn">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="example-content">
+                <div class="example-input">
+                    <label data-i18n="example_input_label">Input:</label>
+                    <textarea class="example-input-text" rows="3" onchange="updateTrainingExamples()" data-i18n-placeholder="example_input_placeholder" placeholder="Enter input text..."></textarea>
+                </div>
+                <div class="example-output">
+                    <label data-i18n="example_output_label">Output:</label>
+                    <textarea class="example-output-text" rows="3" onchange="updateTrainingExamples()" data-i18n-placeholder="example_output_placeholder" placeholder="Enter expected output..."></textarea>
+                </div>
+            </div>
+        </div>
+    </template>
 </main> 

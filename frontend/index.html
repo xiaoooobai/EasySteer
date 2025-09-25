@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EasySteer - Steer Vector Control Panel</title>
     <link rel="stylesheet" href="static/css/main.css">
+    <link rel="stylesheet" href="static/css/chat.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -30,12 +31,16 @@
             <button class="nav-btn" onclick="switchPage('extraction')" data-i18n="nav_extraction">
                 <i class="fas fa-search"></i> Extraction
             </button>
+            <button class="nav-btn" onclick="switchPage('chat')" data-i18n="nav_chat">
+                Chat
+            </button>
         </nav>
 
         <!-- Module content placeholders -->
         <div id="inference-module"></div>
         <div id="training-module"></div>
         <div id="extraction-module"></div>
+        <div id="chat-module"></div>
 
         <footer>
             <p>EasySteer © 2024 | Powered by VLLM Steer Vectors</p>
@@ -46,7 +51,7 @@
     <script>
         // Load HTML modules dynamically
         document.addEventListener('DOMContentLoaded', function() {
-            const modules = ['inference', 'training', 'extraction'];
+            const modules = ['inference', 'training', 'extraction', 'chat'];
             const promises = modules.map(moduleName => loadModule(moduleName));
             
             Promise.all(promises).then(() => {

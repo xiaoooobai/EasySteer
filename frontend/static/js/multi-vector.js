@@ -49,7 +49,7 @@ export function addVectorConfig() {
             <div class="form-group">
                 <label>Path</label>
                 <div class="file-input-wrapper">
-                    <input type="text" id="${configId}-path" placeholder="/path/to/steer_vector.safetensors">
+                    <input type="text" id="${configId}-path" placeholder="/path/to/steer_vector.gguf">
                     <button class="btn-secondary" onclick="document.getElementById('${configId}-file').click()">
                         <i class="fas fa-folder-open"></i>
                     </button>

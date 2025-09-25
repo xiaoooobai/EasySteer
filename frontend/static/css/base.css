@@ -206,11 +206,12 @@ label {
 
 input[type="text"],
 input[type="number"],
+input[type="password"],
 select,
 textarea {
     width: 100%;
-    padding: 10px 14px;
-    border: 2px solid var(--border-color);
+    padding: 10px 12px;
+    border: 1px solid #ccc;
     border-radius: 10px;
     font-size: 1rem;
     transition: all 0.3s ease;
@@ -221,6 +222,7 @@ textarea {
 
 input[type="text"]:focus,
 input[type="number"]:focus,
+input[type="password"]:focus,
 select:focus,
 textarea:focus {
     outline: none;

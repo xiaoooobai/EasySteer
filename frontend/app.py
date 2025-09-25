@@ -6,6 +6,8 @@ import logging
 from training_api import training_bp
 from inference_api import inference_bp
 from extraction_api import extraction_bp
+from sae_api import sae_bp
+from chat_api import chat_bp
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS
@@ -18,6 +20,8 @@ logger = logging.getLogger(__name__)
 app.register_blueprint(training_bp)
 app.register_blueprint(inference_bp)
 app.register_blueprint(extraction_bp)
+app.register_blueprint(sae_bp)
+app.register_blueprint(chat_bp)
 
 @app.route('/')
 def index():
@@ -25,7 +29,7 @@ def index():
     return jsonify({
         'message': 'EasySteer Backend is running',
         'status': 'ok',
-        'modules': ['inference', 'training']
+        'modules': ['inference', 'training', 'extraction', 'sae', 'chat']
     }), 200
 
 @app.route('/api/health', methods=['GET'])
@@ -59,7 +63,13 @@ def health_check():
             'GET /api/extract-status',
             'GET /api/extract-configs',
             'GET /api/extract-config/<config_name>',
-            'POST /api/extract-restart'
+            'POST /api/extract-restart',
+            # SAE related
+            'POST /api/sae/search',
+            'GET /api/sae/feature/<model_id>/<sae_id>/<feature_index>',
+            # Chat related
+            'POST /api/chat',
+            'POST /api/chat/stream'
         ]
     }), 200
 
@@ -69,6 +79,9 @@ if __name__ == '__main__':
     print("🔍 Health Check: http://localhost:5000/api/health")
     print("🧠 Inference APIs: /api/generate, /api/configs")
     print("🎓 Training APIs: /api/train, /api/train-configs")
+    print("🔍 Extract APIs: /api/extract, /api/extract-configs")
+    print("🧩 SAE APIs: /api/sae/search, /api/sae/feature")
+    print("💬 Chat APIs: /api/chat, /api/chat/stream")
     print("=" * 60)
     
     try:

@@ -6,6 +6,12 @@ import { loadTrainConfigOptions } from './training.js';
 import { loadExtractConfigOptions } from './extraction.js';
 import { loadMultiConfigOptions } from './multi-vector.js';
 
+// 更新聊天强度滑块值显示
+export function updateSteerStrengthDisplay(value) {
+    const displayValue = parseFloat(value).toFixed(1);
+    document.querySelectorAll('.steer-slider-labels span')[1].textContent = displayValue;
+}
+
 // Page switching functionality
 export function switchPage(pageType) {
     // Hide all pages
@@ -31,6 +37,11 @@ export function switchPage(pageType) {
         document.getElementById('extraction-page').classList.add('active');
         document.querySelector('[onclick="switchPage(\'extraction\')"]').classList.add('active');
         loadExtractConfigOptions();
+    } else if (pageType === 'chat') {
+        document.getElementById('chat-page').classList.add('active');
+        document.querySelector('[onclick="switchPage(\'chat\')"]').classList.add('active');
+        // 初始化聊天界面
+        initChat();
     }
 }
 
@@ -57,6 +68,10 @@ export function switchInferenceMode(mode) {
         document.getElementById('multi-vector-mode').style.display = 'block';
         document.querySelector('[onclick="switchInferenceMode(\'multi\')"]').classList.add('active');
         loadMultiConfigOptions();
+    } else if (mode === 'sae-explore') {
+        document.getElementById('sae-explore-mode').classList.add('active');
+        document.getElementById('sae-explore-mode').style.display = 'block';
+        document.querySelector('[onclick="switchInferenceMode(\'sae-explore\')"]').classList.add('active');
     }
 }
 
@@ -155,6 +170,10 @@ export function initializeUI() {
                 window.submitConfiguration();
             } else if (document.getElementById('multi-vector-mode')?.classList.contains('active')) {
                 window.submitMultiConfiguration();
+            } else if (document.getElementById('sae-explore-mode')?.classList.contains('active')) {
+                window.searchSaeFeatures();
+            } else if (document.getElementById('chat-page')?.classList.contains('active')) {
+                window.sendChatMessage();
             }
         }
     });

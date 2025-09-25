@@ -2,6 +2,8 @@
 
 // Training status polling interval ID
 let trainingStatusInterval = null;
+// Keep track of training examples count
+let trainingExamplesCount = 0;
 
 // Display training response
 export function showTrainResponse(data) {
@@ -39,8 +41,123 @@ export function showTrainError(message) {
     errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+// Add a new training example
+export function addTrainingExample(inputText = '', outputText = '') {
+    // Get the template
+    const template = document.getElementById('trainingExampleTemplate');
+    const examplesList = document.getElementById('trainingExamplesList');
+    
+    // Remove empty message if it exists
+    const emptyMessage = examplesList.querySelector('.empty-examples-message');
+    if (emptyMessage) {
+        emptyMessage.remove();
+    }
+    
+    // Clone the template content
+    const clone = template.content.cloneNode(true);
+    
+    // Set unique index and update content
+    const exampleItem = clone.querySelector('.training-example-item');
+    const index = trainingExamplesCount++;
+    exampleItem.dataset.index = index;
+    
+    // Set the example number
+    clone.querySelector('.example-number').textContent = `#${index + 1}`;
+    
+    // Set remove button action
+    const removeBtn = clone.querySelector('.remove-example-btn');
+    removeBtn.onclick = function() {
+        removeTrainingExample(index);
+    };
+    
+    // Set input and output values if provided
+    if (inputText) {
+        clone.querySelector('.example-input-text').value = inputText;
+    }
+    if (outputText) {
+        clone.querySelector('.example-output-text').value = outputText;
+    }
+    
+    // Add change event listeners
+    const inputTextarea = clone.querySelector('.example-input-text');
+    const outputTextarea = clone.querySelector('.example-output-text');
+    inputTextarea.onchange = updateTrainingExamples;
+    outputTextarea.onchange = updateTrainingExamples;
+    
+    // Append to the list
+    examplesList.appendChild(clone);
+    
+    // Update the hidden JSON field
+    updateTrainingExamples();
+    
+    // Return the index of the added example
+    return index;
+}
+
+// Remove a training example
+export function removeTrainingExample(index) {
+    const examplesList = document.getElementById('trainingExamplesList');
+    const example = examplesList.querySelector(`.training-example-item[data-index="${index}"]`);
+    
+    if (example) {
+        example.remove();
+        
+        // Re-number remaining examples
+        const examples = examplesList.querySelectorAll('.training-example-item');
+        examples.forEach((example, i) => {
+            // Update the display number
+            example.querySelector('.example-number').textContent = `#${i + 1}`;
+            // Update the data-index attribute
+            example.dataset.index = i;
+            // Update the remove button onclick handler
+            const removeBtn = example.querySelector('.remove-example-btn');
+            removeBtn.onclick = function() {
+                removeTrainingExample(i);
+            };
+        });
+        
+        // Show empty message if no examples left
+        if (examples.length === 0) {
+            const emptyMessage = document.createElement('div');
+            emptyMessage.className = 'empty-examples-message';
+            emptyMessage.setAttribute('data-i18n', 'no_examples_message');
+            emptyMessage.textContent = window.t ? window.t('no_examples_message') : 'No training examples added yet. Click "Add Example" to add your first example.';
+            examplesList.appendChild(emptyMessage);
+        }
+        
+        // Update the trainingExamplesCount to match the current number of examples
+        trainingExamplesCount = examples.length;
+        
+        // Update the hidden JSON field
+        updateTrainingExamples();
+    }
+}
+
+// Update the hidden JSON field with the current examples
+export function updateTrainingExamples() {
+    const examplesList = document.getElementById('trainingExamplesList');
+    const examples = examplesList.querySelectorAll('.training-example-item');
+    const trainingExamplesField = document.getElementById('trainingExamples');
+    
+    const examplesArray = [];
+    
+    examples.forEach(example => {
+        const input = example.querySelector('.example-input-text').value;
+        const output = example.querySelector('.example-output-text').value;
+        examplesArray.push([input, output]);
+    });
+    
+    // Store as JSON string in hidden field
+    trainingExamplesField.value = JSON.stringify(examplesArray);
+    
+    return examplesArray;
+}
+
 // Start training
 export async function startTraining() {
+    // First update examples to ensure the latest data
+    updateTrainingExamples();
+    
     const trainConfig = {
         // Model configuration
         model_path: document.getElementById('trainModelPath').value,
@@ -63,29 +180,27 @@ export async function startTraining() {
             save_steps: parseInt(document.getElementById('saveSteps').value)
         },
         
-        // Training data
+        // Training data from hidden field
         training_examples: document.getElementById('trainingExamples').value
     };
 
     // Validate required fields
-    if (!trainConfig.model_path || !trainConfig.output_dir || !trainConfig.training_examples) {
+    if (!trainConfig.model_path || !trainConfig.output_dir) {
         showTrainError(window.t('required_fields_error'));
+        return;
+    }
+
+    // Check if there are any examples
+    const examples = updateTrainingExamples();
+    if (examples.length === 0) {
+        showTrainError(window.t ? window.t('no_examples_error') : 'Please add at least one training example.');
         return;
     }
 
     // Validate training data format
     try {
-        const examples = JSON.parse(trainConfig.training_examples);
-        if (!Array.isArray(examples) || examples.length === 0) {
-            throw new Error('Training examples must be a non-empty array');
-        }
-        // Validate format of each example
-        examples.forEach((example, index) => {
-            if (!Array.isArray(example) || example.length !== 2) {
-                throw new Error(`Example ${index} must be an array with exactly 2 elements [input, output]`);
-            }
-        });
-        trainConfig.training_examples = examples;
+        const parsedExamples = JSON.parse(trainConfig.training_examples);
+        trainConfig.training_examples = parsedExamples;
     } catch (error) {
         showTrainError(window.t('train_data_format_error') + ': ' + error.message);
         return;
@@ -267,8 +382,22 @@ export function resetTrainForm() {
     document.getElementById('loggingSteps').value = '40';
     document.getElementById('saveSteps').value = '500';
     
-    // Training data
-    document.getElementById('trainingExamples').value = '';
+    // Clear all training examples
+    const examplesList = document.getElementById('trainingExamplesList');
+    examplesList.innerHTML = '';
+    
+    // Add empty message
+    const emptyMessage = document.createElement('div');
+    emptyMessage.className = 'empty-examples-message';
+    emptyMessage.setAttribute('data-i18n', 'no_examples_message');
+    emptyMessage.textContent = window.t ? window.t('no_examples_message') : 'No training examples added yet. Click "Add Example" to add your first example.';
+    examplesList.appendChild(emptyMessage);
+    
+    // Reset hidden field
+    document.getElementById('trainingExamples').value = '[]';
+    
+    // Reset counter
+    trainingExamplesCount = 0;
     
     // Stop training status polling
     stopTrainingStatusPolling();
@@ -342,9 +471,25 @@ export async function importSelectedTrainConfig() {
         document.getElementById('loggingSteps').value = config.training.logging_steps || '40';
         document.getElementById('saveSteps').value = config.training.save_steps || '500';
         
-        // Set training data
-        if (config.data && config.data.training_examples) {
-            document.getElementById('trainingExamples').value = JSON.stringify(config.data.training_examples, null, 2);
+        // Clear existing examples
+        const examplesList = document.getElementById('trainingExamplesList');
+        examplesList.innerHTML = '';
+        trainingExamplesCount = 0;
+        
+        // Add imported examples
+        if (config.data && config.data.training_examples && Array.isArray(config.data.training_examples)) {
+            config.data.training_examples.forEach(example => {
+                if (Array.isArray(example) && example.length === 2) {
+                    addTrainingExample(example[0], example[1]);
+                }
+            });
+        } else {
+            // Add empty message if no examples
+            const emptyMessage = document.createElement('div');
+            emptyMessage.className = 'empty-examples-message';
+            emptyMessage.setAttribute('data-i18n', 'no_examples_message');
+            emptyMessage.textContent = window.t ? window.t('no_examples_message') : 'No training examples added yet. Click "Add Example" to add your first example.';
+            examplesList.appendChild(emptyMessage);
         }
         
         showTrainResponse({
@@ -358,4 +503,15 @@ export async function importSelectedTrainConfig() {
     } catch (error) {
         showTrainError(window.t('train_import_fail_error') + ': ' + error.message);
     }
+}
+
+// Initialize training interface
+export function initTrainingInterface() {
+    // Set up initial empty state
+    resetTrainForm();
+    
+    // Expose functions to global scope
+    window.addTrainingExample = addTrainingExample;
+    window.removeTrainingExample = removeTrainingExample;
+    window.updateTrainingExamples = updateTrainingExamples;
 } 

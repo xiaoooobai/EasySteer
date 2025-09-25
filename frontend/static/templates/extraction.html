@@ -21,10 +21,8 @@
             <div class="form-group">
                 <label for="extractMethod" data-i18n="extract_method_label">Method Selection</label>
                 <select id="extractMethod" onchange="updateExtractionMethodOptions()">
-                    <option value="lat" data-i18n="extract_method_lat">LAT - Linear Algebraic Technique</option>
-                    <option value="pca" data-i18n="extract_method_pca">PCA - Principal Component Analysis</option>
-                    <option value="sae" data-i18n="extract_method_sae">SAE - Sparse Autoencoder</option>
                     <option value="diffmean" data-i18n="extract_method_diffmean">DiffMean - Mean Difference</option>
+                    <option value="pca" data-i18n="extract_method_pca">PCA - Principal Component Analysis</option>
                 </select>
             </div>
             
@@ -36,39 +34,12 @@
             
             <div class="form-group">
                 <label for="extractTokenPos" data-i18n="extract_token_pos_label">Token Position</label>
-                <select id="extractTokenPos">
-                    <option value="-1" data-i18n="extract_token_last">Last Token</option>
-                    <option value="first" data-i18n="extract_token_first">First Token</option>
-                    <option value="mean" data-i18n="extract_token_mean">Mean of All Tokens</option>
-                    <option value="max" data-i18n="extract_token_max">Max Norm Token</option>
-                </select>
+                <input type="number" id="extractTokenPos" value="-1" placeholder="e.g., -1 for last token, 0 for first token">
+                <small class="help-text" data-i18n="extract_token_pos_help">Use integer index: -1 for last token, 0 for first token, etc.</small>
             </div>
         </div>
         
-        <!-- Method-specific options -->
-        <div id="saeOptions" style="display: none;">
-            <div class="form-groups-container">
-                <div class="form-group">
-                    <label for="saeParamsPath" data-i18n="extract_sae_params_label">SAE Parameters Path</label>
-                    <input type="text" id="saeParamsPath" placeholder="e.g., /path/to/sae_params.npz">
-                    <small class="help-text" data-i18n="extract_sae_params_help">Path to the pre-trained SAE parameters file.</small>
-                </div>
-                
-                <div class="form-group">
-                    <label for="saeCombinationMode" data-i18n="extract_sae_combination_label">Feature Combination Mode</label>
-                    <select id="saeCombinationMode">
-                        <option value="weighted_all" data-i18n="extract_sae_weighted_all">Weighted All Features</option>
-                        <option value="weighted_top_k" data-i18n="extract_sae_weighted_top_k">Weighted Top-K Features</option>
-                        <option value="single_top_feature" data-i18n="extract_sae_single_top">Single Top Feature</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-group" id="saeTopKGroup" style="display: none;">
-                <label for="saeTopK" data-i18n="extract_sae_top_k_label">Top K Features</label>
-                <input type="number" id="saeTopK" min="1" max="1000" value="100">
-            </div>
-        </div>
+        <!-- 移除了SAE特定选项，只保留DiffMean和PCA -->
         
         <div class="form-group checkbox-group">
             <label>
@@ -80,23 +51,21 @@
 
     <div class="card">
         <h2><i class="fas fa-database"></i> <span data-i18n="extract_data_config">Sample Data</span></h2>
-        <div class="form-groups-container">
-            <div class="form-group">
-                <label for="extractPositiveSamples" data-i18n="extract_positive_samples_label">Positive Samples</label>
-                <textarea id="extractPositiveSamples" rows="8" data-i18n-placeholder="extract_positive_samples_placeholder" placeholder='Enter positive samples (one per line):
-I love puppies!
-Dogs are wonderful companions.
-My dog brings me so much joy.'></textarea>
-                <small class="help-text" data-i18n="extract_positive_samples_help">Enter samples that represent the behavior/concept you want to enhance.</small>
+        <div class="sample-pairs-container">
+            <div class="sample-pairs-header">
+                <h3 data-i18n="extract_sample_pairs_label">Sample Pairs</h3>
+                <button type="button" class="btn-primary add-sample-btn" onclick="addSamplePair()">
+                    <i class="fas fa-plus"></i> <span data-i18n="add_sample_btn">Add Sample Pair</span>
+                </button>
             </div>
             
-            <div class="form-group">
-                <label for="extractNegativeSamples" data-i18n="extract_negative_samples_label">Negative Samples</label>
-                <textarea id="extractNegativeSamples" rows="8" data-i18n-placeholder="extract_negative_samples_placeholder" placeholder='Enter negative samples (one per line):
-The weather is nice today.
-I need to buy groceries.
-Mathematics is interesting.'></textarea>
-                <small class="help-text" data-i18n="extract_negative_samples_help">Enter neutral samples that don't represent the target behavior/concept.</small>
+            <!-- Hidden fields to store actual data -->
+            <input type="hidden" id="extractPositiveSamples">
+            <input type="hidden" id="extractNegativeSamples">
+            
+            <!-- Sample pairs will be dynamically added here -->
+            <div id="samplePairsList" class="sample-pairs-list">
+                <div class="empty-samples-message" data-i18n="no_samples_message">No sample pairs added yet. Click "Add Sample Pair" to add your first pair.</div>
             </div>
         </div>
     </div>
@@ -106,7 +75,7 @@ Mathematics is interesting.'></textarea>
         <div class="form-groups-container">
             <div class="form-group">
                 <label for="extractOutputPath" data-i18n="extract_output_path_label">Output File Path</label>
-                <input type="text" id="extractOutputPath" placeholder="e.g., ./extracted_vectors/my_vector.safetensors" value="./extracted_vectors/control_vector.safetensors">
+                <input type="text" id="extractOutputPath" placeholder="e.g., ./extracted_vectors/my_vector.gguf" value="./extracted_vectors/control_vector.gguf">
                 <small class="help-text" data-i18n="extract_output_path_help">Path where the extracted control vector will be saved.</small>
             </div>
             
@@ -157,4 +126,26 @@ Mathematics is interesting.'></textarea>
         <h3><i class="fas fa-exclamation-circle"></i> <span data-i18n="error_title">Error Message</span></h3>
         <pre id="extractErrorContent"></pre>
     </div>
+    
+    <!-- Template for new sample pair -->
+    <template id="samplePairTemplate">
+        <div class="sample-pair-item">
+            <div class="sample-header">
+                <span class="sample-number"></span>
+                <button type="button" class="btn-danger remove-sample-btn">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="sample-content">
+                <div class="sample-positive">
+                    <label data-i18n="sample_positive_label">Positive Sample:</label>
+                    <textarea class="sample-positive-text" rows="3" onchange="updateSamplePairs()" data-i18n-placeholder="sample_positive_placeholder" placeholder="Enter positive sample text..."></textarea>
+                </div>
+                <div class="sample-negative">
+                    <label data-i18n="sample_negative_label">Negative Sample:</label>
+                    <textarea class="sample-negative-text" rows="3" onchange="updateSamplePairs()" data-i18n-placeholder="sample_negative_placeholder" placeholder="Enter negative sample text..."></textarea>
+                </div>
+            </div>
+        </div>
+    </template>
 </main> 

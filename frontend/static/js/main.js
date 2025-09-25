@@ -14,10 +14,16 @@ import { addVectorConfig, switchVectorTab, submitMultiConfiguration, importSelec
          removeVectorConfig, editVectorConfig } from './multi-vector.js';
 
 // 训练功能
-import { startTraining, importSelectedTrainConfig, resetTrainForm } from './training.js';
+import { startTraining, importSelectedTrainConfig, resetTrainForm, initTrainingInterface } from './training.js';
 
 // 提取功能
-import { startExtraction, importSelectedExtractConfig, resetExtractForm, updateExtractionMethodOptions } from './extraction.js';
+import { startExtraction, importSelectedExtractConfig, resetExtractForm, updateExtractionMethodOptions, initExtractionInterface } from './extraction.js';
+
+// SAE 探索功能
+import { initSaeExplore, searchSaeFeatures, resetSaeForm, showSaeError, switchSaeMode, getFeatureDetailsByIndex } from './sae-explore.js';
+
+// 聊天功能
+import { initChat, sendChatMessage, selectPreset, resetChat, resetSettings } from './chat.js';
 
 // 工具函数
 import { parseListInput, escapeHtml, showStatus, restartBackend } from './utils.js';
@@ -53,11 +59,30 @@ window.editVectorConfig = editVectorConfig;
 window.startTraining = startTraining;
 window.importSelectedTrainConfig = importSelectedTrainConfig;
 window.resetTrainForm = resetTrainForm;
+window.initTrainingInterface = initTrainingInterface;
 
 window.startExtraction = startExtraction;
 window.importSelectedExtractConfig = importSelectedExtractConfig;
 window.resetExtractForm = resetExtractForm;
 window.updateExtractionMethodOptions = updateExtractionMethodOptions;
+window.initExtractionInterface = initExtractionInterface;
+
+// 导出 SAE 探索功能
+window.searchSaeFeatures = searchSaeFeatures;
+window.resetSaeForm = resetSaeForm;
+window.initSaeExplore = initSaeExplore;
+window.switchSaeMode = switchSaeMode;
+window.getFeatureDetailsByIndex = getFeatureDetailsByIndex;
+// We need to manually export this since it's defined inside sae-explore.js with window.getFeatureDetails
+window.getFeatureDetails = window.getFeatureDetails || function(){};
+
+// 导出聊天功能
+window.initChat = initChat;
+window.sendChatMessage = sendChatMessage;
+window.resetChat = resetChat;
+window.resetSettings = resetSettings;
+window.selectPreset = selectPreset;
+
 
 window.parseListInput = parseListInput;
 window.escapeHtml = escapeHtml;
@@ -70,10 +95,12 @@ function checkModulesLoaded() {
     const inferenceModule = document.getElementById('inference-module');
     const trainingModule = document.getElementById('training-module');
     const extractionModule = document.getElementById('extraction-module');
+    const chatModule = document.getElementById('chat-module');
     
     if (inferenceModule.children.length > 0 && 
         trainingModule.children.length > 0 && 
-        extractionModule.children.length > 0) {
+        extractionModule.children.length > 0 &&
+        chatModule.children.length > 0) {
         
         console.log('All HTML modules loaded, initializing UI...');
         
@@ -85,6 +112,15 @@ function checkModulesLoaded() {
         if (inferencePage) {
             inferencePage.classList.add('active');
         }
+        
+        // 初始化 SAE 探索功能
+        initSaeExplore();
+        
+        // 初始化训练界面
+        initTrainingInterface();
+        
+        // 初始化提取界面
+        initExtractionInterface();
     } else {
         // 如果模块尚未加载完成，稍后再检查
         setTimeout(checkModulesLoaded, 100);

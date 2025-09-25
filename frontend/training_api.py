@@ -304,7 +304,6 @@ def list_train_configs():
         # Define friendly names for training config files
         config_display_names = {
             'emoji_loreft': 'Emoji LoReft Training Configuration',
-            'emotion_loreft': 'Emotion LoReft Training Configuration',
             'emoji_bias': 'Emoji Bias Training Configuration'
         }
         
@@ -329,7 +328,7 @@ def get_train_config(config_name):
     """Get a training configuration file"""
     try:
         # Validate config name
-        allowed_configs = ['emoji_loreft', 'emotion_loreft', 'emoji_bias']
+        allowed_configs = ['emoji_loreft', 'emoji_bias']
         if config_name not in allowed_configs:
             return jsonify({"error": f"Training config {config_name} not found"}), 404
         

@@ -2,11 +2,14 @@
 <main id="inference-page" class="page-content active">
     <!-- 子导航 -->
     <div class="sub-nav">
-        <button class="sub-nav-btn active" onclick="switchInferenceMode('single')" data-i18n="single_vector_mode">
-            <i class="fas fa-vector-square"></i> Single Vector
+        <button class="sub-nav-btn active" onclick="switchInferenceMode('single')">
+            <i class="fas fa-vector-square"></i> <span data-i18n="single_vector_mode">Single Vector</span>
         </button>
-        <button class="sub-nav-btn" onclick="switchInferenceMode('multi')" data-i18n="multi_vector_mode">
-            <i class="fas fa-layer-group"></i> Multi Vector
+        <button class="sub-nav-btn" onclick="switchInferenceMode('multi')">
+            <i class="fas fa-layer-group"></i> <span data-i18n="multi_vector_mode">Multi Vector</span>
+        </button>
+        <button class="sub-nav-btn" onclick="switchInferenceMode('sae-explore')">
+            <i class="fas fa-search"></i> <span data-i18n="sae_explore_mode">SAE Explore</span>
         </button>
     </div>
 
@@ -70,7 +73,7 @@
                 <div class="form-group">
                     <label for="localPath" data-i18n="file_path_label">Local File Path</label>
                     <div class="file-input-wrapper">
-                        <input type="text" id="localPath" placeholder="/path/to/steer_vector.safetensors">
+                        <input type="text" id="localPath" placeholder="/path/to/steer_vector.gguf">
                         <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">
                             <i class="fas fa-folder-open"></i>
                         </button>
@@ -292,6 +295,232 @@
         <div id="multiError" class="error-container" style="display: none;">
             <h3><i class="fas fa-exclamation-circle"></i> <span data-i18n="error_title">Error Message</span></h3>
             <pre id="multiErrorContent"></pre>
+        </div>
+    </div>
+    
+    <!-- SAE 探索模式 -->
+    <div id="sae-explore-mode" class="inference-mode" style="display: none;">
+        <div class="sae-container">
+            <!-- 左侧查询表单 -->
+            <div class="sae-form-column">
+                <div class="card">
+                    <h2><i class="fas fa-brain"></i> <span data-i18n="sae_explore_mode">SAE Feature Explorer</span></h2>
+                    
+                    <!-- 查询模式切换 -->
+                    <div class="sae-mode-switch">
+                        <button id="searchByQueryBtn" class="sae-mode-btn active" onclick="switchSaeMode('query')">
+                            <i class="fas fa-search"></i> <span data-i18n="sae_search_by_query">Semantic Query</span>
+                        </button>
+                        <button id="searchByIndexBtn" class="sae-mode-btn" onclick="switchSaeMode('index')">
+                            <i class="fas fa-hashtag"></i> <span data-i18n="sae_search_by_index">Feature Index Query</span>
+                        </button>
+                    </div>
+                    
+                        <div class="sae-inline-fields">
+                            <div class="form-group inline-field">
+                                <label for="saeModelId" data-i18n="sae_model_id_label">Model ID</label>
+                                <input type="text" id="saeModelId" value="gemma-2-9b-it" readonly>
+                            </div>
+                            <div class="form-group inline-field">
+                                <label for="saeId" data-i18n="sae_id_label">SAE ID</label>
+                                <input type="text" id="saeId" value="31-gemmascope-res-16k" readonly>
+                            </div>
+                            <div class="form-group inline-field">
+                                <label for="saeApiKey" data-i18n="sae_api_key_label">API Key (Required)</label>
+                                <input type="password" id="saeApiKey" data-i18n-placeholder="sae_api_key_placeholder" placeholder="Enter Neuronpedia API key" required>
+                            </div>
+                        </div>
+                        
+                        <!-- 语义查询模式 -->
+                        <div id="queryModeSection" class="sae-mode-section active">
+                            <div class="form-group">
+                                <label for="saeQuery" data-i18n="sae_query_label">Search Query</label>
+                            <input type="text" id="saeQuery" data-i18n-placeholder="sae_query_placeholder" placeholder="Enter your search query (e.g., 'Cat', 'Chinese')">
+                                <small class="help-text" data-i18n="sae_query_help">Enter a semantic search query to find related features</small>
+                            </div>
+                            
+                            <div class="button-group">
+                                <button class="btn-primary" onclick="searchSaeFeatures()">
+                                    <i class="fas fa-search"></i> <span data-i18n="sae_search_btn">Search Features</span>
+                                </button>
+                                <button class="btn-secondary" onclick="resetSaeForm()">
+                                    <i class="fas fa-redo"></i> <span data-i18n="reset_btn">Reset</span>
+                                </button>
+                            <div id="queryLoadingIndicator" class="loading-indicator-inline" style="display: none;">
+                                <div class="spinner"></div>
+                                <span data-i18n="sae_searching">Searching for features...</span>
+                            </div>
+                            <div id="queryErrorIndicator" class="error-indicator-inline" style="display: none;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span id="queryErrorContent"></span>
+                            </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 特征索引查询模式 -->
+                        <div id="indexModeSection" class="sae-mode-section">
+                            <div class="form-group index-query-container">
+                                <label for="saeFeatureIndex" data-i18n="sae_feature_index_label">Feature Index</label>
+                                <div class="index-query-row">
+                                <input type="number" id="saeFeatureIndex" data-i18n-placeholder="sae_feature_index_placeholder" placeholder="Enter feature index (e.g., 15973)" min="0">
+                                    <button class="btn-sm btn-add-vector" onclick="createVectorFromFeatureIndex()" title="Save feature to intervention vectors">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </button>
+                                </div>
+                                <small class="help-text" data-i18n="sae_feature_index_help">Enter the feature index number to query</small>
+                            </div>
+                            
+                            <div class="button-group">
+                                <button class="btn-primary" onclick="getFeatureDetailsByIndex()">
+                                    <i class="fas fa-info-circle"></i> <span data-i18n="sae_view_feature_details">View Feature Details</span>
+                                </button>
+                                <button class="btn-secondary" onclick="resetSaeForm()">
+                                    <i class="fas fa-redo"></i> <span data-i18n="reset_btn">Reset</span>
+                                </button>
+                            <div id="indexLoadingIndicator" class="loading-indicator-inline" style="display: none;">
+                                <div class="spinner"></div>
+                                <span data-i18n="sae_searching">Searching for features...</span>
+                            </div>
+                            <div id="indexErrorIndicator" class="error-indicator-inline" style="display: none;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span id="indexErrorContent"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧结果显示 -->
+            <div class="sae-results-column">
+                <div class="card">
+                    <div id="semanticQueryResults" class="sae-results-container active">
+                    <h3><i class="fas fa-check-circle"></i> <span data-i18n="sae_search_results">Search Results</span></h3>
+                    <div id="saeResultsList" class="results-scroll-container">
+                        <table class="sae-results-table">
+                            <thead>
+                                <tr>
+                                        <th data-i18n="sae_feature_id_column">Feature ID</th>
+                                        <th data-i18n="sae_description_column">Description</th>
+                                        <th data-i18n="sae_similarity_column">Similarity</th>
+                                        <th data-i18n="sae_detail_column">Detail</th>
+                                        <th data-i18n="sae_save_column">Save</th>
+                                </tr>
+                            </thead>
+                            <tbody id="saeResultsBody">
+                                <!-- Search results will be populated here -->
+                                <tr>
+                                        <td colspan="5" class="empty-results" data-i18n="sae_enter_query_prompt">Please enter query conditions and click search</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+
+                    <div id="featureIndexResults" class="sae-results-container">
+                        <h3><i class="fas fa-check-circle"></i> <span data-i18n="sae_feature_details">Feature Details</span></h3>
+                        <div id="featureIndexResultsBody" class="results-scroll-container feature-details-table">
+                            <p class="empty-results" data-i18n="sae_enter_index_prompt">Please enter a feature index and click search</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加的向量区域 -->
+        <div id="sae-vectors-container" class="card" style="margin-top: 20px; display: none;">
+            <h2><i class="fas fa-vector-square"></i> <span data-i18n="sae_added_vectors">Added Intervention Vectors</span></h2>
+            
+            <!-- Tab-based layout for added vectors -->
+            <div class="vector-configs" id="saeVectorsConfig">
+                <!-- Tabs navigation -->
+                <div class="vector-tabs" id="saeVectorTabs">
+                    <!-- Tabs will be dynamically added here -->
+                </div>
+                
+                <!-- Tab content area -->
+                <div class="vector-tab-contents" id="saeVectorTabContents">
+                    <!-- Tab content will be dynamically added here -->
+                </div>
+            </div>
+            
+            <div class="form-group global-controls">
+                <h3><i class="fas fa-robot"></i> Model & Sampling Configuration</h3>
+                <div class="form-groups-container">
+                    <div class="form-group">
+                        <label for="saeModelPath">Model Path</label>
+                        <input type="text" id="saeModelPath" value="/home/shenyl/hf/model/google/gemma-2-9b-it" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="saeGpuDevices">GPU Device IDs</label>
+                        <input type="text" id="saeGpuDevices" placeholder="e.g., 0,1,2 or single GPU: 0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="saeTemperature">Temperature</label>
+                        <div class="slider-container">
+                            <input type="range" id="saeTemperatureSlider" min="0" max="2" step="0.1" value="0.0" oninput="document.getElementById('saeTemperature').value = this.value">
+                            <input type="number" id="saeTemperature" min="0" max="2" step="0.1" value="0.0" oninput="document.getElementById('saeTemperatureSlider').value = this.value">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="saeMaxTokens">Max Tokens</label>
+                        <input type="number" id="saeMaxTokens" min="1" max="4096" value="128">
+                    </div>
+                    <div class="form-group">
+                        <label for="saeRepetitionPenalty">Repetition Penalty</label>
+                        <div class="slider-container">
+                            <input type="range" id="saeRepetitionPenaltySlider" min="1" max="2" step="0.1" value="1.1" oninput="document.getElementById('saeRepetitionPenalty').value = this.value">
+                            <input type="number" id="saeRepetitionPenalty" min="1" max="2" step="0.1" value="1.1" oninput="document.getElementById('saeRepetitionPenaltySlider').value = this.value">
+                        </div>
+                    </div>
+                </div>
+
+                <h3><i class="fas fa-cog"></i> Steer Vector Configuration</h3>
+                <div class="form-groups-container">
+                    <div class="form-group">
+                        <label for="saeSVName">Steer Vector Name</label>
+                        <input type="text" id="saeSVName" placeholder="Enter steer vector name" value="sae_vector">
+                    </div>
+                    <div class="form-group">
+                        <label for="saeSVId">Steer Vector ID</label>
+                        <input type="number" id="saeSVId" placeholder="Enter unique ID" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="saeConflictResolution">Conflict Resolution Method</label>
+                        <select id="saeConflictResolution">
+                            <option value="sequential">Sequential (Apply in order)</option>
+                            <option value="priority">Priority (Use first vector)</option>
+                            <option value="error">Error (Disallow conflicts)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="global-controls instruction-box">
+                <label for="saeInstruction">Input Instruction</label>
+                <textarea id="saeInstruction" rows="3" placeholder="Enter your prompt or question"></textarea>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn-primary" id="saeApplyVectorsBtn" onclick="applyVectors()">
+                    <i class="fas fa-paper-plane"></i> <span data-i18n="submit_btn">Generate</span>
+                </button>
+                <button class="btn-secondary" id="saeClearVectorsBtn" onclick="clearVectors()">
+                    <i class="fas fa-trash"></i> <span data-i18n="clear_btn">Clear</span>
+                </button>
+                <button class="btn-warning" onclick="restartBackend()">
+                    <i class="fas fa-sync-alt"></i> <span data-i18n="restart_backend_btn">Restart Backend</span>
+                </button>
+            </div>
+            
+            <div id="saeResponse" class="response-container" style="display: none;">
+                <h3><i class="fas fa-check-circle"></i> <span data-i18n="response_title">Generation Result</span></h3>
+                <div id="saeResponseContent"></div>
+            </div>
+
+            <div id="saeError" class="error-container" style="display: none;">
+                <h3><i class="fas fa-exclamation-circle"></i> <span data-i18n="error_title">Error Message</span></h3>
+                <pre id="saeErrorContent"></pre>
+            </div>
         </div>
     </div>
 </main> 

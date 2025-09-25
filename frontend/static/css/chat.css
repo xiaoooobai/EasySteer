@@ -1,0 +1,369 @@
+/* Chat页面的样式 */
+
+/* 整体布局 */
+#chat-page.active {
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: row;
+    height: calc(100vh - 60px); /* 减去顶部导航栏的高度 */
+    overflow: hidden;
+}
+
+/* 左侧配置面板 */
+.chat-config-panel {
+    width: 400px;
+    background-color: #f5f5f7;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.chat-config-section {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.chat-config-header {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+/* Model selector styles removed as requested */
+
+/* 预设列表 */
+.preset-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.preset-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.preset-item:hover {
+    background-color: #f0f0f0;
+}
+
+.preset-item.active {
+    background-color: #e9f0ff;
+    border-color: #4a6bff;
+}
+
+.preset-icon {
+    font-size: 1.5rem;
+    margin-right: 15px;
+    width: 30px;
+    text-align: center;
+}
+
+.preset-info {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.preset-name {
+    font-weight: 500;
+}
+
+.preset-demo-btn {
+    padding: 4px 10px;
+    background-color: #eee;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #999;  /* 更浅的颜色 */
+    cursor: default;  /* 默认鼠标样式 */
+    user-select: none;  /* 防止文本选择 */
+}
+
+/* Steer slider and keywords styles removed as requested */
+
+/* 高级设置 */
+.advanced-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.setting-row.setting-row-center {
+    justify-content: center;
+}
+
+.setting-row label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #555;
+}
+
+.setting-row input[type="number"],
+.setting-row select,
+.setting-row .small-input {
+    width: 80px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: right;
+}
+
+.setting-row input[type="text"][readonly] {
+    background-color: #f5f5f5;
+    color: #666;
+    cursor: not-allowed;
+    border: 1px solid #ddd;
+}
+
+.checkbox-container {
+    position: relative;
+    padding-left: 25px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 18px;
+    width: 18px;
+    background-color: #eee;
+    border-radius: 3px;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+    background-color: #ccc;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background-color: #4a6bff;
+}
+
+.reset-settings-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 8px 15px;
+    color: #555;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.reset-settings-btn:hover {
+    background-color: #e5e5e5;
+}
+
+.notes-section {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.notes-content {
+    flex-grow: 1;
+    padding: 10px;
+    background-color: #fafafa;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #666;
+    white-space: pre-wrap; /* Preserve line breaks */
+}
+
+/* 右侧聊天界面 */
+.chat-interface {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.chat-views {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.chat-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #ddd;
+    position: relative;
+}
+
+.chat-view:last-child {
+    border-right: none;
+}
+
+.chat-view-header {
+    background-color: #f5f5f7;
+    padding: 10px 15px;
+    font-weight: 600;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.message-bubble {
+    padding: 12px 15px;
+    border-radius: 18px;
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+.user-message {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.user-message .message-bubble {
+    background-color: #4a6bff;
+    color: white;
+    border-bottom-right-radius: 5px;
+}
+
+.ai-message {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.ai-message .message-bubble {
+    background-color: #f0f0f0;
+    color: #333;
+    border-bottom-left-radius: 5px;
+}
+
+.message-avatar {
+    display: none; /* 隐藏头像 */
+    background-color: #ddd;
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    color: #666;
+    font-weight: bold;
+}
+
+/* 底部输入区域 */
+.chat-input-container {
+    background-color: #f5f5f7;
+    padding: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.chat-action-buttons {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+    gap: 20px;
+}
+
+.action-button {
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    color: #555;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+}
+
+.action-button:hover {
+    background-color: #f0f0f0;
+}
+
+.restart-button {
+    color: #e74c3c;
+}
+
+.restart-button:hover {
+    background-color: #ffeeee;
+}
+
+.chat-input-box {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border-radius: 24px;
+    padding: 5px;
+    border: 1px solid #ddd;
+}
+
+#chatInput {
+    flex: 1;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    outline: none;
+    font-size: 1rem;
+}
+
+.send-button {
+    background-color: #4a6bff;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.send-button:hover {
+    background-color: #3a5ae0;
+} 

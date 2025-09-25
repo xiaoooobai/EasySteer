@@ -2,27 +2,135 @@
 
 // Extraction status polling interval ID
 let extractionStatusInterval = null;
+// Keep track of sample pairs count
+let samplePairsCount = 0;
+
+// Add a new sample pair
+export function addSamplePair(positiveText = '', negativeText = '') {
+    // Get the template
+    const template = document.getElementById('samplePairTemplate');
+    const samplePairsList = document.getElementById('samplePairsList');
+    
+    // Remove empty message if it exists
+    const emptyMessage = samplePairsList.querySelector('.empty-samples-message');
+    if (emptyMessage) {
+        emptyMessage.remove();
+    }
+    
+    // Clone the template content
+    const clone = template.content.cloneNode(true);
+    
+    // Set unique index and update content
+    const samplePairItem = clone.querySelector('.sample-pair-item');
+    const index = samplePairsCount++;
+    samplePairItem.dataset.index = index;
+    
+    // Set the sample number
+    clone.querySelector('.sample-number').textContent = `#${index + 1}`;
+    
+    // Set remove button action
+    const removeBtn = clone.querySelector('.remove-sample-btn');
+    removeBtn.onclick = function() {
+        removeSamplePair(index);
+    };
+    
+    // Set input values if provided
+    if (positiveText) {
+        clone.querySelector('.sample-positive-text').value = positiveText;
+    }
+    if (negativeText) {
+        clone.querySelector('.sample-negative-text').value = negativeText;
+    }
+    
+    // Add change event listeners
+    const positiveTextarea = clone.querySelector('.sample-positive-text');
+    const negativeTextarea = clone.querySelector('.sample-negative-text');
+    positiveTextarea.onchange = updateSamplePairs;
+    negativeTextarea.onchange = updateSamplePairs;
+    
+    // Append to the list
+    samplePairsList.appendChild(clone);
+    
+    // Update the hidden fields
+    updateSamplePairs();
+    
+    // Return the index of the added pair
+    return index;
+}
+
+// Remove a sample pair
+export function removeSamplePair(index) {
+    const samplePairsList = document.getElementById('samplePairsList');
+    const samplePair = samplePairsList.querySelector(`.sample-pair-item[data-index="${index}"]`);
+    
+    if (samplePair) {
+        samplePair.remove();
+        
+        // Re-number remaining sample pairs
+        const samplePairs = samplePairsList.querySelectorAll('.sample-pair-item');
+        samplePairs.forEach((pair, i) => {
+            // Update the display number
+            pair.querySelector('.sample-number').textContent = `#${i + 1}`;
+            // Update the data-index attribute
+            pair.dataset.index = i;
+            // Update the remove button onclick handler
+            const removeBtn = pair.querySelector('.remove-sample-btn');
+            removeBtn.onclick = function() {
+                removeSamplePair(i);
+            };
+        });
+        
+        // Show empty message if no pairs left
+        if (samplePairs.length === 0) {
+            const emptyMessage = document.createElement('div');
+            emptyMessage.className = 'empty-samples-message';
+            emptyMessage.setAttribute('data-i18n', 'no_samples_message');
+            emptyMessage.textContent = window.t ? window.t('no_samples_message') : 'No sample pairs added yet. Click "Add Sample Pair" to add your first pair.';
+            samplePairsList.appendChild(emptyMessage);
+        }
+        
+        // Update the samplePairsCount to match the current number of samples
+        samplePairsCount = samplePairs.length;
+        
+        // Update the hidden fields
+        updateSamplePairs();
+    }
+}
+
+// Update the hidden fields with current samples
+export function updateSamplePairs() {
+    const samplePairsList = document.getElementById('samplePairsList');
+    const samplePairs = samplePairsList.querySelectorAll('.sample-pair-item');
+    
+    const positiveSamples = [];
+    const negativeSamples = [];
+    
+    samplePairs.forEach(pair => {
+        const positiveText = pair.querySelector('.sample-positive-text').value.trim();
+        const negativeText = pair.querySelector('.sample-negative-text').value.trim();
+        
+        if (positiveText) {
+            positiveSamples.push(positiveText);
+        }
+        
+        if (negativeText) {
+            negativeSamples.push(negativeText);
+        }
+    });
+    
+    // Update hidden fields
+    document.getElementById('extractPositiveSamples').value = positiveSamples.join('\n');
+    document.getElementById('extractNegativeSamples').value = negativeSamples.join('\n');
+    
+    return { positiveSamples, negativeSamples };
+}
 
 // Update extraction method options
 export function updateExtractionMethodOptions() {
     const method = document.getElementById('extractMethod').value;
-    const saeOptions = document.getElementById('saeOptions');
-    const saeCombinationMode = document.getElementById('saeCombinationMode');
-    const saeTopKGroup = document.getElementById('saeTopKGroup');
     
-    // Hide all method-specific options
-    saeOptions.style.display = 'none';
-    
-    // Show options based on the selected method
-    if (method === 'sae') {
-        saeOptions.style.display = 'block';
-        // Show/hide top-k option based on combination mode
-        if (saeCombinationMode.value === 'weighted_top_k') {
-            saeTopKGroup.style.display = 'block';
-        } else {
-            saeTopKGroup.style.display = 'none';
-        }
-    }
+    // 只保留DiffMean和PCA方法，不再需要显示SAE选项
+    // 保留此函数以防将来需要添加其他方法选项
 }
 
 // Display extraction response
@@ -76,6 +184,9 @@ export function showExtractError(message) {
 
 // Start extraction
 export async function startExtraction() {
+    // First update samples to ensure the latest data
+    updateSamplePairs();
+    
     // Get form data
     const extractConfig = {
         // Model configuration
@@ -89,7 +200,7 @@ export async function startExtraction() {
         token_pos: document.getElementById('extractTokenPos').value,
         normalize: document.getElementById('extractNormalize').checked,
         
-        // Sample data
+        // Sample data - get from hidden fields
         positive_samples: document.getElementById('extractPositiveSamples').value.trim().split('\n').filter(s => s.trim()),
         negative_samples: document.getElementById('extractNegativeSamples').value.trim().split('\n').filter(s => s.trim()),
         
@@ -97,37 +208,29 @@ export async function startExtraction() {
         output_path: document.getElementById('extractOutputPath').value,
         vector_name: document.getElementById('extractVectorName').value
     };
-    
-    // SAE-specific configuration
-    if (extractConfig.method === 'sae') {
-        extractConfig.sae_params_path = document.getElementById('saeParamsPath').value;
-        extractConfig.combination_mode = document.getElementById('saeCombinationMode').value;
-        if (extractConfig.combination_mode === 'weighted_top_k') {
-            extractConfig.top_k = parseInt(document.getElementById('saeTopK').value);
-        }
-    }
-    
+
+    // DiffMean和PCA方法不需要额外配置
+
     // Validate required fields
-    if (!extractConfig.model_path || !extractConfig.output_path || 
-        extractConfig.positive_samples.length === 0 || extractConfig.negative_samples.length === 0) {
+    if (!extractConfig.model_path || !extractConfig.output_path) {
         showExtractError(window.t('required_fields_error'));
         return;
     }
-    
-    // If SAE method, validate params path
-    if (extractConfig.method === 'sae' && !extractConfig.sae_params_path) {
-        showExtractError(window.t('sae_path_error'));
+
+    // Check if there are any samples
+    if (extractConfig.positive_samples.length === 0 || extractConfig.negative_samples.length === 0) {
+        showExtractError(window.t ? window.t('no_samples_error') : 'Please add at least one positive and one negative sample.');
         return;
     }
-    
+
     // Show loading state
     const extractButton = document.querySelector('[onclick="startExtraction()"]');
     const originalHTML = extractButton.innerHTML;
     extractButton.innerHTML = '<span class="loading"></span> ' + window.t('extracting_in_progress');
     extractButton.disabled = true;
-    
+
     try {
-        // Send request to the backend
+        // Send request to backend
         const apiUrl = `${window.location.protocol}//${window.location.hostname}:5000/api/extract`;
         const response = await fetch(apiUrl, {
             method: 'POST',
@@ -137,9 +240,9 @@ export async function startExtraction() {
             },
             body: JSON.stringify(extractConfig)
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok) {
             showExtractResponse(data);
         } else {
@@ -268,27 +371,38 @@ function displayExtractionStatus(status) {
 
 // Reset extraction form
 export function resetExtractForm() {
-    // Model configuration
+    // Reset model configuration
     document.getElementById('extractModelPath').value = '';
     document.getElementById('extractGpuDevices').value = '0';
     
-    // Extraction method configuration
-    document.getElementById('extractMethod').value = 'lat';
+    // Reset method selection
+    document.getElementById('extractMethod').value = 'diffmean'; // 将默认方法从lat改为diffmean
     document.getElementById('extractTargetLayer').value = '';
-    document.getElementById('extractTokenPos').value = '-1';
+    document.getElementById('extractTokenPos').value = -1; // 使用整数-1作为默认值
     document.getElementById('extractNormalize').checked = true;
     
-    // SAE-specific configuration
-    document.getElementById('saeParamsPath').value = '';
-    document.getElementById('saeCombinationMode').value = 'weighted_all';
-    document.getElementById('saeTopK').value = '100';
+    // SAE选项已被移除，不再需要重置
     
-    // Sample data
+    // Clear all sample pairs
+    const samplePairsList = document.getElementById('samplePairsList');
+    samplePairsList.innerHTML = '';
+    
+    // Add empty message
+    const emptyMessage = document.createElement('div');
+    emptyMessage.className = 'empty-samples-message';
+    emptyMessage.setAttribute('data-i18n', 'no_samples_message');
+    emptyMessage.textContent = window.t ? window.t('no_samples_message') : 'No sample pairs added yet. Click "Add Sample Pair" to add your first pair.';
+    samplePairsList.appendChild(emptyMessage);
+    
+    // Reset hidden fields
     document.getElementById('extractPositiveSamples').value = '';
     document.getElementById('extractNegativeSamples').value = '';
     
-    // Output configuration
-    document.getElementById('extractOutputPath').value = './extracted_vectors/control_vector.safetensors';
+    // Reset counter
+    samplePairsCount = 0;
+    
+    // Reset output configuration
+    document.getElementById('extractOutputPath').value = './extracted_vectors/control_vector.gguf';
     document.getElementById('extractVectorName').value = 'extracted_vector';
     
     // Stop extraction status polling
@@ -298,7 +412,7 @@ export function resetExtractForm() {
     document.getElementById('extractResponse').style.display = 'none';
     document.getElementById('extractError').style.display = 'none';
     
-    // Update method options display
+    // Update method options to match the selected method
     updateExtractionMethodOptions();
 }
 
@@ -349,37 +463,62 @@ export async function importSelectedExtractConfig() {
         
         const config = await response.json();
         
+        // Handle both nested and flat config structures
         // Set model configuration
-        document.getElementById('extractModelPath').value = config.model_path || '';
-        document.getElementById('extractGpuDevices').value = config.gpu_devices || '0';
+        document.getElementById('extractModelPath').value = config.model?.path || config.model_path || '';
+        document.getElementById('extractGpuDevices').value = config.model?.gpu_devices || config.gpu_devices || '0';
         
-        // Set extraction method configuration
-        document.getElementById('extractMethod').value = config.method || 'diffmean';
-        document.getElementById('extractTargetLayer').value = config.target_layer || '';
-        document.getElementById('extractTokenPos').value = config.token_pos || '-1';
-        document.getElementById('extractNormalize').checked = config.normalize !== false;
+        // Set method configuration
+        document.getElementById('extractMethod').value = config.method?.name || config.method || 'diffmean';
+        document.getElementById('extractTargetLayer').value = config.method?.target_layer !== undefined ? config.method.target_layer : 
+                                                             (config.target_layer !== undefined ? config.target_layer : '');
         
-        // Set SAE-specific parameters
-        if (config.method === 'sae') {
-            document.getElementById('saeParamsPath').value = config.sae_params_path || '';
-            document.getElementById('saeCombinationMode').value = config.combination_mode || 'weighted_all';
-            document.getElementById('saeTopK').value = config.top_k || 100;
+        // 处理token_pos，确保它是一个整数值
+        let tokenPos = config.method?.token_pos || config.token_pos || -1;
+        if (typeof tokenPos === 'string' && tokenPos !== '-1' && isNaN(parseInt(tokenPos))) {
+            // 如果是字符串且不是数字形式，则转换为相应的索引
+            if (tokenPos === 'first') tokenPos = 0;
+            else tokenPos = -1; // 默认使用最后一个token
         }
+        document.getElementById('extractTokenPos').value = parseInt(tokenPos);
+        document.getElementById('extractNormalize').checked = config.method?.normalize !== undefined ? config.method.normalize : 
+                                                             (config.normalize !== undefined ? config.normalize : true);
         
-        // Set sample data
-        if (config.positive_samples && Array.isArray(config.positive_samples)) {
-            document.getElementById('extractPositiveSamples').value = config.positive_samples.join('\n');
-        }
-        if (config.negative_samples && Array.isArray(config.negative_samples)) {
-            document.getElementById('extractNegativeSamples').value = config.negative_samples.join('\n');
+        // SAE选项已被移除，不再需要设置
+        // 我们已经限制了方法只能是DiffMean和PCA，所以不会有SAE配置
+        
+        // Update method options based on the selected method
+        updateExtractionMethodOptions();
+        
+        // Clear existing sample pairs
+        const samplePairsList = document.getElementById('samplePairsList');
+        samplePairsList.innerHTML = '';
+        samplePairsCount = 0;
+        
+        // Add imported samples as pairs - handle both nested and flat structures
+        const positiveSamples = config.data?.positive_samples || config.positive_samples || [];
+        const negativeSamples = config.data?.negative_samples || config.negative_samples || [];
+        
+        if (positiveSamples.length > 0 || negativeSamples.length > 0) {
+            // Create sample pairs by pairing positive and negative samples
+            const maxPairs = Math.max(positiveSamples.length, negativeSamples.length);
+            for (let i = 0; i < maxPairs; i++) {
+                const positive = i < positiveSamples.length ? positiveSamples[i] : '';
+                const negative = i < negativeSamples.length ? negativeSamples[i] : '';
+                addSamplePair(positive, negative);
+            }
+        } else {
+            // Add empty message if no samples
+            const emptyMessage = document.createElement('div');
+            emptyMessage.className = 'empty-samples-message';
+            emptyMessage.setAttribute('data-i18n', 'no_samples_message');
+            emptyMessage.textContent = window.t ? window.t('no_samples_message') : 'No sample pairs added yet. Click "Add Sample Pair" to add your first pair.';
+            samplePairsList.appendChild(emptyMessage);
         }
         
         // Set output configuration
-        document.getElementById('extractOutputPath').value = config.output_path || './extracted_vectors/control_vector.safetensors';
-        document.getElementById('extractVectorName').value = config.vector_name || 'extracted_vector';
-        
-        // Trigger method option update
-        updateExtractionMethodOptions();
+        document.getElementById('extractOutputPath').value = config.output?.path || config.output_path || './extracted_vectors/control_vector.safetensors';
+        document.getElementById('extractVectorName').value = config.output?.name || config.vector_name || 'extracted_vector';
         
         showExtractResponse({
             message: window.t('extract_import_success_message'),
@@ -392,4 +531,15 @@ export async function importSelectedExtractConfig() {
     } catch (error) {
         showExtractError(window.t('extract_import_fail_error') + ': ' + error.message);
     }
+} 
+
+// Initialize extraction interface
+export function initExtractionInterface() {
+    // Set up initial empty state
+    resetExtractForm();
+    
+    // Expose functions to global scope
+    window.addSamplePair = addSamplePair;
+    window.removeSamplePair = removeSamplePair;
+    window.updateSamplePairs = updateSamplePairs;
 } 

@@ -159,14 +159,15 @@ def run_extraction(config):
         method = config['method']
         update_extraction_status(f"Using extraction method: {method.upper()}")
         
-        # Prepare extraction parameters
+        # Prepare extraction parameters - only accept integer values
         token_pos = config.get('token_pos', '-1')
-        # Convert token_pos to appropriate type
-        if token_pos == '-1':
-            token_pos = -1
-        elif token_pos.isdigit():
+        # Convert token_pos to appropriate type (integer only)
+        try:
             token_pos = int(token_pos)
-        # Otherwise, keep as string (e.g., "first", "last", "mean", "max")
+        except ValueError:
+            # 如果无法转换为整数，默认使用-1（最后一个token）
+            update_extraction_status(f"Warning: Invalid token position '{token_pos}', using -1 (last token) instead.")
+            token_pos = -1
         
         # Get model type (inferred from model path)
         model_type = "qwen2.5"  # Default value, can be further inferred from model path
@@ -259,9 +260,7 @@ def list_extract_configs():
         # Define friendly names for extraction config files
         config_display_names = {
             'emotion_diffmean': 'Emotion DiffMean Extraction',
-            'emotion_pca': 'Emotion PCA Extraction',
-            'emotion_lat': 'Emotion LAT Extraction',
-            'personality_diffmean': 'Personality DiffMean Extraction'
+            'emotion_pca': 'Emotion PCA Extraction'
         }
         
         config_files = []
@@ -285,7 +284,7 @@ def get_extract_config(config_name):
     """Get an extraction configuration file"""
     try:
         # Validate config name
-        allowed_configs = ['emotion_diffmean', 'emotion_pca', 'emotion_lat', 'personality_diffmean']
+        allowed_configs = ['emotion_diffmean', 'emotion_pca']
         if config_name not in allowed_configs:
             return jsonify({"error": f"Extraction config {config_name} not found"}), 404
         
