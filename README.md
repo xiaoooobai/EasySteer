@@ -450,7 +450,7 @@ We benchmark EasySteer on an NVIDIA A6000 GPU (48GB) using DeepSeek-R1-Distill-Q
 
 ### Steering Latency
 
-| Setting       | FTL (ms) ↓ | TPS@≤128 ↑ | TTLT (s)@≤128 ↓ | TPS@≤2048 ↑ | TTLT (s)@≤2048 ↓ | FTL (ms) ↓ | Batch | TPS@≤128 ↑ | TTLT (s)@≤128 ↓ | TPS@≤2048 ↑ | TTLT (s)@≤2048 ↓ |
+| Setting       | FTL&nbsp;(ms)↓ | TPS@≤128↑ | TTLT&nbsp;(s)@≤128↓ | TPS@≤2048↑ | TTLT&nbsp;(s)@≤2048↓ | FTL&nbsp;(ms)↓ | Batch | TPS@≤128↑ | TTLT&nbsp;(s)@≤128↓ | TPS@≤2048↑ | TTLT&nbsp;(s)@≤2048↓ |
 |--------------|------------:|-----------:|-----------------:|------------:|------------------:|-----------:|------:|-----------:|-----------------:|------------:|------------------:|
 | base vLLM    | 34.67 | 56.50 | 2.2653 | 63.57 | 23.86 | 3.230 | 256 | 5452.60 | 0.0235 | 4308.27 | 0.3590 |
 | one layer    | 45.95 | 47.92 | 2.6712 | 51.90 | 29.23 | 3.250 | 256 | 5029.43 | 0.0255 | 3935.79 | 0.3930 |
@@ -462,7 +462,7 @@ We benchmark EasySteer on an NVIDIA A6000 GPU (48GB) using DeepSeek-R1-Distill-Q
 
 ### Framework Comparison (All-layer intervention)
 
-| Framework  | FTL (ms) ↓ | TPS@≤128 ↑ | TTLT (s)@≤128 ↓ | TPS@≤2048 ↑ | TTLT (s)@≤2048 ↓ | FTL (ms) ↓ | Batch | TPS@≤128 ↑ | TTLT (s)@≤128 ↓ | TPS@≤2048 ↑ | TTLT (s)@≤2048 ↓ |
+| Framework  | FTL&nbsp;(ms)↓ | TPS@≤128↑ | TTLT&nbsp;(s)@≤128↓ | TPS@≤2048↑ | TTLT&nbsp;(s)@≤2048↓ | FTL&nbsp;(ms)↓ | Batch | TPS@≤128↑ | TTLT&nbsp;(s)@≤128↓ | TPS@≤2048↑ | TTLT&nbsp;(s)@≤2048↓ |
 |------------|------------:|-----------:|-----------------:|------------:|------------------:|-----------:|------:|-----------:|-----------------:|------------:|------------------:|
 | EasyEdit2  | 125.60 | 29.45 | 4.3468 | 33.91 | 41.53 | - | - | - | - | - | - |
 | repeng     | 75.95 | 33.73 | 3.7944 | 34.72 | 41.37 | 71.83 | 64 | 638.86 | 0.2003 | 316.59 | 5.0615 |
