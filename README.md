@@ -45,7 +45,7 @@
 Built on the high-performance inference engine **vLLM**, EasySteer achieves precise interventions during model generation while maintaining high throughput and low latency. Through its modular design, researchers and developers can easily extract, construct, and apply steering vectors to achieve fine-grained control over LLM behavior.
 
 <div align="center">
-  <img src="assets/easysteer_arch.png" width="750">
+  <img src="figures/arch.png" width="100%">
 </div>
 
 ## Key Features
@@ -446,17 +446,32 @@ The following table lists important papers that have been reproduced using EasyS
 
 ## Performance
 
-EasySteer achieves significant speedups compared to other steering frameworks:
+We benchmark EasySteer on an NVIDIA A6000 GPU (48GB) using DeepSeek-R1-Distill-Qwen-1.5B and the MATH dataset. We evaluate: base vLLM (no steering), single-layer intervention, all-layer intervention, and multi-vector intervention (three vectors on all layers). We report single-input and batch modes at two sequence lengths (≤128 and ≤2048 tokens).
 
-| Operation | EasySteer | PyReFT | EasyEdit2 |
-|-----------|-----------|--------|-----------|
-| Inference (7B model, tok/s) | 98.4 | 11.7 | 10.2 |
-| Inference (13B model, tok/s) | 62.1 | 5.8 | 5.2 |
-| Inference (70B model, tok/s) | 14.8 | 1.1 | 0.9 |
-| Vector Application Overhead | 2.3% | 18.5% | 21.2% |
-| Memory Efficiency | High | Medium | Medium |
+### Steering Latency
 
-*Measured on a single A100 GPU, batch size 1, generating 512 tokens with a single steering vector*
+| Setting       | FTL (ms) ↓ | TPS@≤128 ↑ | TTLT (s)@≤128 ↓ | TPS@≤2048 ↑ | TTLT (s)@≤2048 ↓ | FTL (ms) ↓ | Batch | TPS@≤128 ↑ | TTLT (s)@≤128 ↓ | TPS@≤2048 ↑ | TTLT (s)@≤2048 ↓ |
+|--------------|------------:|-----------:|-----------------:|------------:|------------------:|-----------:|------:|-----------:|-----------------:|------------:|------------------:|
+| base vLLM    | 34.67 | 56.50 | 2.2653 | 63.57 | 23.86 | 3.230 | 256 | 5452.60 | 0.0235 | 4308.27 | 0.3590 |
+| one layer    | 45.95 | 47.92 | 2.6712 | 51.90 | 29.23 | 3.250 | 256 | 5029.43 | 0.0255 | 3935.79 | 0.3930 |
+| all layers   | 48.01 | 44.16 | 2.8987 | 45.11 | 33.62 | 3.265 | 256 | 4540.34 | 0.0282 | 3619.09 | 0.4274 |
+| multi vectors| 61.04 | 31.98 | 4.0026 | 32.09 | 47.26 | 3.435 | 256 | 3917.58 | 0.0327 | 3081.45 | 0.5019 |
+
+- In batch inference with all-layer intervention, throughput is 4540.34 tok/s (≤128) and 3619.09 tok/s (≤2048), compared to the baseline 5452.60 and 4308.27 tok/s (17% and 16% lower).
+- With three concurrent vectors on all layers, long-sequence throughput remains 3081.45 tok/s (71.5% of baseline).
+
+### Framework Comparison (All-layer intervention)
+
+| Framework  | FTL (ms) ↓ | TPS@≤128 ↑ | TTLT (s)@≤128 ↓ | TPS@≤2048 ↑ | TTLT (s)@≤2048 ↓ | FTL (ms) ↓ | Batch | TPS@≤128 ↑ | TTLT (s)@≤128 ↓ | TPS@≤2048 ↑ | TTLT (s)@≤2048 ↓ |
+|------------|------------:|-----------:|-----------------:|------------:|------------------:|-----------:|------:|-----------:|-----------------:|------------:|------------------:|
+| EasyEdit2  | 125.60 | 29.45 | 4.3468 | 33.91 | 41.53 | - | - | - | - | - | - |
+| repeng     | 75.95 | 33.73 | 3.7944 | 34.72 | 41.37 | 71.83 | 64 | 638.86 | 0.2003 | 316.59 | 5.0615 |
+| pyreft     | 103.70 | 27.82 | 4.6011 | 27.85 | 57.81 | 23.13 | 256 | 1454.46 | 0.0880 | 652.63 | 2.3834 |
+| EasySteer  | 48.01 | 44.16 | 2.8987 | 45.11 | 33.62 | 3.265 | 256 | 4540.34 | 0.0282 | 3619.09 | 0.4274 |
+
+- EasySteer delivers 3619.09 tok/s on long-sequence batch inference vs. pyreft (652.63) and repeng (316.59), i.e., 5.5× and 11.4× speedups. EasyEdit2 lacks batch support.
+
+Notes: We use zero-valued steering vectors to keep token counts consistent across systems. Interventions apply at every token during generation. EasySteer uses vLLM’s default batch size; other frameworks use the largest batch size that fits memory.
 
 ## Star History
 
