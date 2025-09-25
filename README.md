@@ -13,13 +13,14 @@
 
 \[ English | [中文](README_zh.md) \]
 
-<h1>EasySteer: High-Performance LLM Steering Framework</h1>
+<h1>EasySteer: A Unified Framework for High-Performance and Extensible LLM Steering</h1>
 </div>
 
 ## 📝 Table of Contents
 
 - [Overview](#overview)
 - [Key Features](#key-features)
+- [Performance](#performance)
 - [Getting Started](#getting-started)
   - [Installation](#installation)
   - [Quick Example](#quick-example)
@@ -31,32 +32,49 @@
   - [frontend](#frontend)
 - [Examples](#examples)
   - [Paper Replications](#paper-replications)
-- [Performance](#performance)
 - [Star History](#star-history)
 - [License](#license)
 - [Usage Statement](#usage-statement)
-- [Citation](#citation)
 - [Acknowledgements](#acknowledgements)
+- [Citation](#citation)
 
 ## Overview
 
-**EasySteer** is an efficient and easy-to-use framework for steering large language models, focusing on solving efficiency bottlenecks in current model intervention research. While numerous studies on steering vectors exist, they typically rely on the `transformers` library for inference, resulting in low efficiency in real-world applications.
+**EasySteer** is a unified framework for high-performance and extensible LLM steering. LLM steering enables controlling model behavior through targeted manipulation of hidden states during inference, offering a lightweight alternative to expensive model retraining. This approach has proven effective for diverse applications including safety alignment, style control, and factuality enhancement.
 
-Built on the high-performance inference engine **vLLM**, EasySteer achieves precise interventions during model generation while maintaining high throughput and low latency. Through its modular design, researchers and developers can easily extract, construct, and apply steering vectors to achieve fine-grained control over LLM behavior.
+Despite the demonstrated effectiveness of steering techniques, existing frameworks face critical limitations. Current tools built on HuggingFace Transformers exhibit significant computational inefficiencies. They lack fine-grained control mechanisms needed for complex real-world applications and provide limited support for integrating custom algorithms. These limitations create substantial barriers between theoretical research and practical deployment.
 
+EasySteer addresses these challenges through deep integration with the vLLM inference engine. The framework achieves 5.5-11.4× speedup over existing tools while maintaining minimal inference overhead. It provides a modular architecture with pluggable interfaces that enable researchers to easily implement and evaluate steering methods. The system supports both analysis-based approaches that extract concept vectors from model activations and learning-based methods that optimize parameterized steering functions. Through this comprehensive design, EasySteer establishes critical infrastructure for advancing LLM steering from research to production use.
 <div align="center">
   <img src="figures/arch.png" width="100%">
 </div>
-
 ## Key Features
 
-- **🚀 High-Performance Inference**: Based on `vllm-steer`, achieving precise interventions while maintaining fast inference speeds
-- **🧩 Modular Architecture**: Decoupled hidden state extraction, vector construction, and model fine-tuning for easy expansion and customization
-- **🔧 Easy Extension**: Plugin-based design allowing users to easily integrate their own algorithms
-- **☯️ Dual Intervention Paradigms**:
-  - **Analysis-based Intervention (Steering)**: Extract control vectors by analyzing model activations
-  - **Learning-based Intervention (ReFT)**: Learn specific behavioral representations through language modeling objectives
-- **🎮 Vector Library**: Pre-extracted intervention vectors ready for use with various control effects
+- **🚀 High-Performance Inference**: The framework achieves 5.5 to 11.4 times speedup over existing tools through vLLM integration. It maintains high throughput even with all-layer interventions, experiencing only 16-17% reduction compared to baseline inference.
+
+- **🧩 Modular Architecture**: The system comprises four integrated modules including steering vector generation, application, resource library, and interactive demonstration. Each module operates independently while maintaining seamless integration.
+
+- **🔧 Extensible Design**: Researchers can implement custom steering algorithms through pluggable interfaces without modifying core framework code. The decorator-based registration system automatically discovers and loads new algorithms.
+
+- **🎯 Fine-Grained Control**: The framework supports token-level, position-specific, and stage-aware interventions. A unified request interface enables flexible configuration of steering parameters and strategies.
+
+- **⚡ Multi-Vector Coordination**: Multiple steering vectors and algorithms can be applied concurrently within a single inference pass. The system provides configurable conflict resolution strategies for complex multi-objective steering scenarios.
+
+- **📚 Comprehensive Resources**: Pre-computed steering vectors are available for eight application domains including safety, reasoning, knowledge, reality, language, sentiment, personality, and style. Each vector includes documented evaluation results and usage guidelines.
+
+- **🖥️ Interactive Demonstration**: A web-based interface enables intuitive exploration of steering effects. The system integrates inference testing, multi-turn chat, vector extraction, and training pipelines in a unified environment.
+
+## Performance
+
+We benchmark EasySteer on an NVIDIA A6000 GPU (48GB) using DeepSeek-R1-Distill-Qwen-1.5B and the MATH dataset. We evaluate: base vLLM (no steering), single-layer intervention, all-layer intervention, and multi-vector intervention (three vectors on all layers). We report single-input and batch modes at two sequence lengths (≤128 and ≤2048 tokens).
+<div align="center">
+  <img src="figures/speed.png" width="100%">
+</div>
+- In batch inference with all-layer intervention, throughput is 4540.34 tok/s (≤128) and 3619.09 tok/s (≤2048), compared to the baseline 5452.60 and 4308.27 tok/s (17% and 16% lower).
+- With three concurrent vectors on all layers, long-sequence throughput remains 3081.45 tok/s (71.5% of baseline).
+- EasySteer delivers 3619.09 tok/s on long-sequence batch inference vs. pyreft (652.63) and repeng (316.59), i.e., 5.5× and 11.4× speedups. EasyEdit2 lacks batch support.
+
+Notes: We use zero-valued steering vectors to keep token counts consistent across systems. Interventions apply at every token during generation. EasySteer uses vLLM’s default batch size; other frameworks use the largest batch size that fits memory.
 
 ## Getting Started
 
@@ -444,35 +462,6 @@ The following table lists important papers that have been reproduced using EasyS
 | SEAL: Steerable Reasoning Calibration of Large Language Models for Free | thinking pattern | [Replication Code](replications/seal/) |
 | _More replications coming soon..._ | | |
 
-## Performance
-
-We benchmark EasySteer on an NVIDIA A6000 GPU (48GB) using DeepSeek-R1-Distill-Qwen-1.5B and the MATH dataset. We evaluate: base vLLM (no steering), single-layer intervention, all-layer intervention, and multi-vector intervention (three vectors on all layers). We report single-input and batch modes at two sequence lengths (≤128 and ≤2048 tokens).
-
-### Steering Latency
-
-| Setting       | FTL&nbsp;(ms)↓ | TPS@≤128↑ | TTLT&nbsp;(s)@≤128↓ | TPS@≤2048↑ | TTLT&nbsp;(s)@≤2048↓ | FTL&nbsp;(ms)↓ | Batch | TPS@≤128↑ | TTLT&nbsp;(s)@≤128↓ | TPS@≤2048↑ | TTLT&nbsp;(s)@≤2048↓ |
-|--------------|------------:|-----------:|-----------------:|------------:|------------------:|-----------:|------:|-----------:|-----------------:|------------:|------------------:|
-| base vLLM    | 34.67 | 56.50 | 2.2653 | 63.57 | 23.86 | 3.230 | 256 | 5452.60 | 0.0235 | 4308.27 | 0.3590 |
-| one layer    | 45.95 | 47.92 | 2.6712 | 51.90 | 29.23 | 3.250 | 256 | 5029.43 | 0.0255 | 3935.79 | 0.3930 |
-| all layers   | 48.01 | 44.16 | 2.8987 | 45.11 | 33.62 | 3.265 | 256 | 4540.34 | 0.0282 | 3619.09 | 0.4274 |
-| multi vectors| 61.04 | 31.98 | 4.0026 | 32.09 | 47.26 | 3.435 | 256 | 3917.58 | 0.0327 | 3081.45 | 0.5019 |
-
-- In batch inference with all-layer intervention, throughput is 4540.34 tok/s (≤128) and 3619.09 tok/s (≤2048), compared to the baseline 5452.60 and 4308.27 tok/s (17% and 16% lower).
-- With three concurrent vectors on all layers, long-sequence throughput remains 3081.45 tok/s (71.5% of baseline).
-
-### Framework Comparison (All-layer intervention)
-
-| Framework  | FTL&nbsp;(ms)↓ | TPS@≤128↑ | TTLT&nbsp;(s)@≤128↓ | TPS@≤2048↑ | TTLT&nbsp;(s)@≤2048↓ | FTL&nbsp;(ms)↓ | Batch | TPS@≤128↑ | TTLT&nbsp;(s)@≤128↓ | TPS@≤2048↑ | TTLT&nbsp;(s)@≤2048↓ |
-|------------|------------:|-----------:|-----------------:|------------:|------------------:|-----------:|------:|-----------:|-----------------:|------------:|------------------:|
-| EasyEdit2  | 125.60 | 29.45 | 4.3468 | 33.91 | 41.53 | - | - | - | - | - | - |
-| repeng     | 75.95 | 33.73 | 3.7944 | 34.72 | 41.37 | 71.83 | 64 | 638.86 | 0.2003 | 316.59 | 5.0615 |
-| pyreft     | 103.70 | 27.82 | 4.6011 | 27.85 | 57.81 | 23.13 | 256 | 1454.46 | 0.0880 | 652.63 | 2.3834 |
-| EasySteer  | 48.01 | 44.16 | 2.8987 | 45.11 | 33.62 | 3.265 | 256 | 4540.34 | 0.0282 | 3619.09 | 0.4274 |
-
-- EasySteer delivers 3619.09 tok/s on long-sequence batch inference vs. pyreft (652.63) and repeng (316.59), i.e., 5.5× and 11.4× speedups. EasyEdit2 lacks batch support.
-
-Notes: We use zero-valued steering vectors to keep token counts consistent across systems. Interventions apply at every token during generation. EasySteer uses vLLM’s default batch size; other frameworks use the largest batch size that fits memory.
-
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=ZJU-REAL/EasySteer&type=Date)](https://star-history.com/#ZJU-REAL/EasySteer&Date)
@@ -483,7 +472,14 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 
 ## Usage Statement
 
-This framework is intended for academic research and technical exchange only. Users must comply with local laws and regulations. It is strictly prohibited to use this framework to generate or disseminate any harmful content. The developers are not responsible for any misuse of this framework.
+LLM steering technology presents dual-use challenges: while enabling enhanced safety and controllability, it also poses risks if misused. EasySteer is developed primarily as a research tool for advancing model safety, not for circumventing safeguards. We emphasize the following principles for responsible deployment:
+- Steering should be restricted to legitimate research and safety-enhancing applications
+- Any behavioral modifications must be explicitly disclosed to end users
+- All applications must adhere to relevant ethical guidelines and legal frameworks
+
+## Acknowledgements
+
+We thank the [vLLM](https://github.com/vllm-project/vllm) project for providing the high-performance inference framework, and projects like [pyreft](https://github.com/stanfordnlp/pyreft) for their contributions to the field of representation learning. 
 
 ## Citation
 
@@ -499,7 +495,3 @@ If you find EasySteer useful in your research, please consider citing:
   howpublished = {\url{https://github.com/ZJU-REAL/EasySteer}}
 }
 ```
-
-## Acknowledgements
-
-We thank the [vLLM](https://github.com/vllm-project/vllm) project for providing the high-performance inference framework, and projects like [pyreft](https://github.com/stanfordnlp/pyreft) for their contributions to the field of representation learning. 
