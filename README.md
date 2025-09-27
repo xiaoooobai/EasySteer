@@ -1,6 +1,9 @@
 <div align="center">
+  <img src="figures/logo.png" width="25%">
+  <h1>A Unified Framework for High-Performance and Extensible LLM Steering</h1>
+</div>
 
-![# EasySteer](assets/logo.png)
+<div align="center">
 
 [![GitHub Repo stars](https://img.shields.io/github/stars/ZJU-REAL/EasySteer?style=social)](https://github.com/ZJU-REAL/EasySteer/stargazers)
 [![GitHub last commit](https://img.shields.io/github/last-commit/ZJU-REAL/EasySteer)](https://github.com/ZJU-REAL/EasySteer/commits/main)
@@ -13,7 +16,7 @@
 
 \[ English | [中文](README_zh.md) \]
 
-<h1>EasySteer: A Unified Framework for High-Performance and Extensible LLM Steering</h1>
+
 </div>
 
 ## 📝 Table of Contents
@@ -32,38 +35,27 @@
   - [frontend](#frontend)
 - [Examples](#examples)
   - [Paper Replications](#paper-replications)
-- [Star History](#star-history)
 - [License](#license)
 - [Usage Statement](#usage-statement)
 - [Acknowledgements](#acknowledgements)
 - [Citation](#citation)
+- [Star History](#star-history)
 
 ## Overview
 
-**EasySteer** is a unified framework for high-performance and extensible LLM steering. LLM steering enables controlling model behavior through targeted manipulation of hidden states during inference, offering a lightweight alternative to expensive model retraining. This approach has proven effective for diverse applications including safety alignment, style control, and factuality enhancement.
+**EasySteer** is a unified framework for high-performance LLM steering built on vLLM. LLM steering enables controlling model behavior by manipulating hidden states during inference without retraining. While existing frameworks suffer from computational inefficiency and limited functionality, EasySteer achieves 5.5-11.4× speedup through deep vLLM integration while providing modular architecture with pluggable interfaces for both analysis-based and learning-based steering methods.
 
-Despite the demonstrated effectiveness of steering techniques, existing frameworks face critical limitations. Current tools built on HuggingFace Transformers exhibit significant computational inefficiencies. They lack fine-grained control mechanisms needed for complex real-world applications and provide limited support for integrating custom algorithms. These limitations create substantial barriers between theoretical research and practical deployment.
-
-EasySteer addresses these challenges through deep integration with the vLLM inference engine. The framework achieves 5.5-11.4× speedup over existing tools while maintaining minimal inference overhead. It provides a modular architecture with pluggable interfaces that enable researchers to easily implement and evaluate steering methods. The system supports both analysis-based approaches that extract concept vectors from model activations and learning-based methods that optimize parameterized steering functions. Through this comprehensive design, EasySteer establishes critical infrastructure for advancing LLM steering from research to production use.
 <div align="center">
   <img src="figures/arch.png" width="100%">
 </div>
 
 ## Key Features
 
-- **🚀 High-Performance Inference**: The framework achieves 5.5 to 11.4 times speedup over existing tools through vLLM integration. It maintains high throughput even with all-layer interventions, experiencing only 16-17% reduction compared to baseline inference.
-
-- **🧩 Modular Architecture**: The system comprises four integrated modules including steering vector generation, application, resource library, and interactive demonstration. Each module operates independently while maintaining seamless integration.
-
-- **🔧 Extensible Design**: Researchers can implement custom steering algorithms through pluggable interfaces without modifying core framework code. The decorator-based registration system automatically discovers and loads new algorithms.
-
-- **🎯 Fine-Grained Control**: The framework supports token-level, position-specific, and stage-aware interventions. A unified request interface enables flexible configuration of steering parameters and strategies.
-
-- **⚡ Multi-Vector Coordination**: Multiple steering vectors and algorithms can be applied concurrently within a single inference pass. The system provides configurable conflict resolution strategies for complex multi-objective steering scenarios.
-
-- **📚 Comprehensive Resources**: Pre-computed steering vectors are available for eight application domains including safety, reasoning, knowledge, reality, language, sentiment, personality, and style. Each vector includes documented evaluation results and usage guidelines.
-
-- **🖥️ Interactive Demonstration**: A web-based interface enables intuitive exploration of steering effects. The system integrates inference testing, multi-turn chat, vector extraction, and training pipelines in a unified environment.
+- **🚀 High Performance**: 5.5-11.4× faster than existing frameworks through vLLM integration
+- **🧩 Modular Design**: Pluggable interfaces for custom steering algorithms without modifying core code  
+- **🎯 Fine-Grained Control**: Token-level, position-specific, and multi-vector steering capabilities
+- **📚 Ready-to-Use**: Pre-computed steering vectors for 8 domains (safety, reasoning, knowledge, etc.)
+- **🖥️ Interactive Demo**: Web interface for testing vectors, training models, and multi-turn chat
 
 ## Performance
 
@@ -467,9 +459,6 @@ The following table lists important papers that have been reproduced using EasyS
 | SEAL: Steerable Reasoning Calibration of Large Language Models for Free | thinking pattern | [Replication Code](replications/seal/) |
 | _More replications coming soon..._ | | |
 
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=ZJU-REAL/EasySteer&type=Date)](https://star-history.com/#ZJU-REAL/EasySteer&Date)
 
 ## License
 
@@ -478,6 +467,7 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 ## Usage Statement
 
 LLM steering technology presents dual-use challenges: while enabling enhanced safety and controllability, it also poses risks if misused. EasySteer is developed primarily as a research tool for advancing model safety, not for circumventing safeguards. We emphasize the following principles for responsible deployment:
+
 - Steering should be restricted to legitimate research and safety-enhancing applications
 - Any behavioral modifications must be explicitly disclosed to end users
 - All applications must adhere to relevant ethical guidelines and legal frameworks
@@ -500,3 +490,7 @@ If you find EasySteer useful in your research, please consider citing:
   howpublished = {\url{https://github.com/ZJU-REAL/EasySteer}}
 }
 ```
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ZJU-REAL/EasySteer&type=Date)](https://star-history.com/#ZJU-REAL/EasySteer&Date)
