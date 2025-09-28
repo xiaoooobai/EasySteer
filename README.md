@@ -86,7 +86,7 @@ print(happy_output[0].outputs[0].text)
 
 ## Modules
 
-### vllm-steer
+### Vllm-steer
 
 The core inference engine of EasySteer, extending vLLM to enable the application of steering vectors during generation. This module has the following features:
 
@@ -277,7 +277,7 @@ multi_vector_request = SteerVectorRequest(
 
 </details>
 
-### hidden_states
+### Hidden_states
 
 This module extracts and manages hidden states from language models, forming the foundation for steering vector generation.
 
@@ -310,7 +310,7 @@ all_hidden_states, outputs = hs.get_all_hidden_states(llm, prompts)
 </details>
 
 
-### steer
+### Steer
 
 The steer module implements various algorithms for extracting meaningful intervention vectors from hidden states, including DiffMean, PCA, LAT, Linear probe, and SAE. Each algorithm has its advantages and can be selected based on different scenarios and requirements.
 
@@ -339,7 +339,7 @@ control_vector = StatisticalControlVector.import_gguf("vectors/diffmean.gguf")
 
 </details>
 
-### reft
+### Reft
 
 Steering is an analytical intervention approach that extracts control vectors by analyzing hidden states. In contrast, ReFT is a learning-based intervention that learns specific behavioral representations through language modeling objectives. This module is a reimplementation of the pyreft project.
 
@@ -417,7 +417,7 @@ reft_model.save("results/emoji_style")
 
 </details>
 
-### frontend
+### Frontend
 
 The frontend module provides a web interface where users can interactively configure models, adjust steering parameters, and test both steering and ReFT interventions without writing code. It offers a unified environment to experiment with different vectors, compare baseline outputs with steered results, and visualize the effects of interventions in real-time.
 
