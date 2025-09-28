@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="figures/logo_v2.png" width="30%">
+  <img src="figures/logo_v2.png" width="70%">
   <h3>A Unified Framework for High-Performance and Extensible LLM Steering</h1>
 </div>
 
@@ -102,7 +102,7 @@ The core inference engine of EasySteer, extending vLLM to enable the application
 - **Extensible Interface Design**: Provides standardized interfaces for researchers to easily implement and integrate custom intervention algorithms
 
 <details>
-    <summary>Internal Structure</summary>
+    <summary><b>Internal Structure</b></summary>
 
 The core functionality of `vllm-steer` is implemented in the `vllm/steer_vectors` directory, with the following file structure:
 
@@ -126,7 +126,7 @@ vllm/steer_vectors/
 </details>
 
 <details>
-    <summary>Core Components</summary>
+    <summary><b>Core Components</b></summary>
 
 1. **Request and Configuration System** (`request.py`):
    - `SteerVectorRequest`: Defines the steering vector request format, supporting both single-vector and multi-vector modes
@@ -148,7 +148,7 @@ vllm/steer_vectors/
 </details>
 
 <details>
-    <summary>Extension Mechanisms</summary>
+    <summary><b>Extension Mechanisms</b></summary>
 
 `vllm-steer` is designed with flexible extension mechanisms that allow researchers to easily implement and integrate their own intervention algorithms:
 
@@ -171,7 +171,7 @@ vllm/steer_vectors/
 </details>
 
 <details>
-    <summary>Example of Extending with a New Algorithm</summary>
+    <summary><b>Example of Extending with a New Algorithm</b></summary>
 
 To add a new intervention algorithm, just follow these steps:
 
@@ -220,7 +220,7 @@ With this modular design, researchers can focus on implementing the core logic o
 </details>
 
 <details>
-    <summary>Vector Configuration Examples</summary>
+    <summary><b>Vector Configuration Examples</b></summary>
 
 ```python
 from vllm.steer_vectors.request import SteerVectorRequest, VectorConfig
@@ -321,7 +321,7 @@ all_hidden_states, outputs = hs.get_all_hidden_states(llm, prompts)
 The steer module implements various algorithms for extracting meaningful intervention vectors from hidden states, including DiffMean, PCA, LAT, Linear probe, and SAE. Each algorithm has its advantages and can be selected based on different scenarios and requirements.
 
 <details>
-<summary>Steering vector generation.</summary>
+<summary><b>Steering vector generation</b></summary>
 
 ```python
 from easysteer.steer import extract_diffmean_control_vector, StatisticalControlVector
@@ -350,7 +350,7 @@ control_vector = StatisticalControlVector.import_gguf("vectors/diffmean.gguf")
 Steering is an analytical intervention approach that extracts control vectors by analyzing hidden states. In contrast, ReFT is a learning-based intervention that learns specific behavioral representations through language modeling objectives. This module is a reimplementation of the pyreft project.
 
 <details>
-<summary>ReFT example.</summary>
+<summary><b>ReFT example</b></summary>
 
 ```python
 import torch
