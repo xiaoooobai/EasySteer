@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="figures/logo_v2.png" width="70%">
+  <img src="figures/logo.png" width="70%">
   <h3>A Unified Framework for High-Performance and Extensible LLM Steering</h1>
 </div>
 
