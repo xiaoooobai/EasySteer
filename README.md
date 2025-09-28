@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="figures/logo.png" width="25%">
-  <h1>A Unified Framework for High-Performance and Extensible LLM Steering</h1>
+  <img src="figures/logo_v2.png" width="30%">
+  <h3>A Unified Framework for High-Performance and Extensible LLM Steering</h1>
 </div>
 
 <div align="center">
@@ -15,73 +15,31 @@
 [![Open in Spaces](https://img.shields.io/badge/🤗-Open%20in%20Spaces-blue)](https://huggingface.co/spaces/ZJU-REAL/EasySteer-Board)
 
 \[ English | [中文](README_zh.md) \]
-
-
 </div>
 
-## 📝 Table of Contents
+---
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Performance](#performance)
-- [Getting Started](#getting-started)
-  - [Installation](#installation)
-  - [Quick Example](#quick-example)
-- [Modules](#modules)
-  - [vllm-steer](#vllm-steer)
-  - [hidden_states](#hidden_states)
-  - [steer](#steer)
-  - [reft](#reft)
-  - [frontend](#frontend)
-- [Examples](#examples)
-  - [Paper Replications](#paper-replications)
-- [License](#license)
-- [Usage Statement](#usage-statement)
-- [Acknowledgements](#acknowledgements)
-- [Citation](#citation)
-- [Star History](#star-history)
+## News 🔥
 
-## Overview
+[2025/09] We’ve open-sourced the code of EasySteel  — feel free to try it out!
 
-**EasySteer** is a unified framework for high-performance LLM steering built on vLLM. LLM steering enables controlling model behavior by manipulating hidden states during inference without retraining. While existing frameworks suffer from computational inefficiency and limited functionality, EasySteer achieves 5.5-11.4× speedup through deep vLLM integration while providing modular architecture with pluggable interfaces for both analysis-based and learning-based steering methods.
+---
 
-<div align="center">
-  <img src="figures/arch.png" width="100%">
-</div>
+## About
 
-## Key Features
+Built on vLLM, EasySteer is a unified framework for high-performance LLM steering. EasySteer is fast, flexible and easy to use with:
 
-- **🚀 High Performance**: 5.5-11.4× faster than existing frameworks through vLLM integration
-- **🧩 Modular Design**: Pluggable interfaces for custom steering algorithms without modifying core code  
-- **🎯 Fine-Grained Control**: Token-level, position-specific, and multi-vector steering capabilities
-- **📚 Ready-to-Use**: Pre-computed steering vectors for 8 domains (safety, reasoning, knowledge, etc.)
-- **🖥️ Interactive Demo**: Web interface for testing vectors, training models, and multi-turn chat
-
-## Performance
-
-We benchmark EasySteer on an NVIDIA A6000 GPU (48GB) using DeepSeek-R1-Distill-Qwen-1.5B and the MATH dataset. We evaluate: base vLLM (no steering), single-layer intervention, all-layer intervention, and multi-vector intervention (three vectors on all layers). We report single-input and batch modes at two sequence lengths (≤128 and ≤2048 tokens).
-
-<div align="center">
-  <img src="figures/speed.png" width="100%">
-</div>
-
-- In batch inference with all-layer intervention, throughput is 4540.34 tok/s (≤128) and 3619.09 tok/s (≤2048), compared to the baseline 5452.60 and 4308.27 tok/s (17% and 16% lower).
-
-- With three concurrent vectors on all layers, long-sequence throughput remains 3081.45 tok/s (71.5% of baseline).
-
-- EasySteer delivers 3619.09 tok/s on long-sequence batch inference vs. pyreft (652.63) and repeng (316.59), i.e., 5.5× and 11.4× speedups. EasyEdit2 lacks batch support.
-
-Notes: We use zero-valued steering vectors to keep token counts consistent across systems. Interventions apply at every token during generation. EasySteer uses vLLM’s default batch size; other frameworks use the largest batch size that fits memory.
+- **High Performance**: 5.5-11.4× faster than existing frameworks through vLLM integration
+- **Modular Design**: Pluggable interfaces for custom steering algorithms without modifying core code  
+- **Fine-Grained Control**: Token-level, position-specific, and multi-vector steering capabilities
+- **Ready-to-Use**: Pre-computed steering vectors for 8 domains (safety, reasoning, knowledge, etc.)
+- **Interactive Demo**: Web interface for testing vectors, training models, and multi-turn chat
 
 ## Getting Started
 
 ### Installation
 
 ```bash
-# Create conda environment with Python 3.10
-conda create -n easysteer python=3.10
-conda activate easysteer
-
 # Clone the repository (with submodules)
 git clone --recurse-submodules https://github.com/ZJU-REAL/EasySteer.git
 cd EasySteer/vllm-steer
@@ -107,7 +65,7 @@ os.environ["VLLM_USE_V1"]="0"
 # Initialize the LLM model
 # enable_steer_vector=True: Enables vector steering (without this, behaves like regular vLLM)
 # enforce_eager=True: Ensures reliability and stability of interventions (strongly recommended)
-llm = LLM(model="Qwen/Qwen2.5-1.5B-Instruct/", enable_steer_vector=True, enforce_eager=True, tensor_parallel_size=1)
+llm = LLM(model="Qwen/Qwen2.5-1.5B-Instruct", enable_steer_vector=True, enforce_eager=True, tensor_parallel_size=1)
 
 sampling_params = SamplingParams(
     temperature=0.0,
@@ -124,8 +82,10 @@ happy_output = llm.generate(text, steer_vector_request=happy_request, sampling_p
 
 print(baseline_output[0].outputs[0].text)
 print(happy_output[0].outputs[0].text)
+
 # ======baseline======
 # I'm sorry to hear about the loss of your dog. Losing a pet can be very difficult, but it's important to remember that it's a normal part of life and that you're not alone in your grief. It's okay to feel sad, angry, or confused. Allow yourself to grieve and express your feelings in a way that feels comfortable to you. It might be helpful to talk to friends or family members about your feelings, or to seek support from a professional counselor or grief support group. Remember that healing takes time, and it's okay to take things one day at a time.
+
 # ======happy steer======
 # I'm so sorry to hear that! Losing a beloved pet like a dog is a very special and joyful occasion. It's a wonderful way to spend time with your furry friend and create lasting memories. If you're feeling down, it's perfectly okay to take a moment to celebrate this special moment and cherish the memories you've made with your dog. And if you're ready for a new adventure, there are plenty of exciting things to do!
 ```
@@ -141,11 +101,12 @@ The core inference engine of EasySteer, extending vLLM to enable the application
 - **Precise Intervention Control**: Accurately specifies target positions, application layers, and intervention strengths
 - **Extensible Interface Design**: Provides standardized interfaces for researchers to easily implement and integrate custom intervention algorithms
 
-#### Internal Structure
+<details>
+    <summary>Internal Structure</summary>
 
 The core functionality of `vllm-steer` is implemented in the `vllm/steer_vectors` directory, with the following file structure:
 
-```
+```plaintext
 vllm/steer_vectors/
 ├── __init__.py                # Module entry point
 ├── request.py                 # Request and configuration definitions
@@ -162,7 +123,10 @@ vllm/steer_vectors/
     └── template.py            # New algorithm template example
 ```
 
-#### Core Components
+</details>
+
+<details>
+    <summary>Core Components</summary>
 
 1. **Request and Configuration System** (`request.py`):
    - `SteerVectorRequest`: Defines the steering vector request format, supporting both single-vector and multi-vector modes
@@ -181,7 +145,10 @@ vllm/steer_vectors/
    - `loreft.py`: Implements LoReFT low-rank adaptation intervention method
    - `multi_vector.py`: Implements multi-vector combination strategies
 
-#### Extension Mechanisms
+</details>
+
+<details>
+    <summary>Extension Mechanisms</summary>
 
 `vllm-steer` is designed with flexible extension mechanisms that allow researchers to easily implement and integrate their own intervention algorithms:
 
@@ -201,7 +168,10 @@ vllm/steer_vectors/
    - Support for applying interventions at different model levels (attention layers, FFN layers, etc.)
    - Implemented via hooks like `forward_decoder_layer` and `forward_mlp_layer`
 
-#### Example of Extending with a New Algorithm
+</details>
+
+<details>
+    <summary>Example of Extending with a New Algorithm</summary>
 
 To add a new intervention algorithm, just follow these steps:
 
@@ -247,7 +217,10 @@ class MyCustomAlgorithm(BaseSteerVectorAlgorithm):
 
 With this modular design, researchers can focus on implementing the core logic of their intervention algorithms without needing to understand the complex details of the underlying inference engine.
 
-#### Vector Configuration Examples
+</details>
+
+<details>
+    <summary>Vector Configuration Examples</summary>
 
 ```python
 from vllm.steer_vectors.request import SteerVectorRequest, VectorConfig
@@ -308,9 +281,14 @@ multi_vector_request = SteerVectorRequest(
 )
 ```
 
+</details>
+
 ### hidden_states
 
 This module extracts and manages hidden states from language models, forming the foundation for steering vector generation.
+
+<details>
+    <summary> Hidden states extraction. </summary>
 
 ```python
 # Import hidden states module to extract model activations
@@ -335,9 +313,15 @@ prompts = [
 all_hidden_states, outputs = hs.get_all_hidden_states(llm, prompts)
 ```
 
+</details>
+
+
 ### steer
 
 The steer module implements various algorithms for extracting meaningful intervention vectors from hidden states, including DiffMean, PCA, LAT, Linear probe, and SAE. Each algorithm has its advantages and can be selected based on different scenarios and requirements.
+
+<details>
+<summary>Steering vector generation.</summary>
 
 ```python
 from easysteer.steer import extract_diffmean_control_vector, StatisticalControlVector
@@ -359,9 +343,14 @@ control_vector.export_gguf("vectors/diffmean.gguf")
 control_vector = StatisticalControlVector.import_gguf("vectors/diffmean.gguf")
 ```
 
+</details>
+
 ### reft
 
 Steering is an analytical intervention approach that extracts control vectors by analyzing hidden states. In contrast, ReFT is a learning-based intervention that learns specific behavioral representations through language modeling objectives. This module is a reimplementation of the pyreft project.
+
+<details>
+<summary>ReFT example.</summary>
 
 ```python
 import torch
@@ -432,11 +421,12 @@ trainer.train()
 reft_model.save("results/emoji_style")
 ```
 
+</details>
+
 ### frontend
 
 The frontend module provides a web interface where users can interactively configure models, adjust steering parameters, and test both steering and ReFT interventions without writing code. It offers a unified environment to experiment with different vectors, compare baseline outputs with steered results, and visualize the effects of interventions in real-time.
 
-#### Starting the Frontend
 
 ```bash
 cd frontend
@@ -447,8 +437,8 @@ bash start.sh
 
 EasySteer provides two types of resources to help users get started:
 
-1. **examples** folder contains various simple usage examples
-2. **replications** folder contains academic paper experiments reproduced using EasySteer
+1. **[examples](examples)** folder contains various simple usage examples
+2. **[replications](replications)** folder contains academic paper experiments reproduced using EasySteer
 
 ### Paper Replications
 
@@ -458,7 +448,6 @@ The following table lists important papers that have been reproduced using EasyS
 |------------|----------|------|
 | SEAL: Steerable Reasoning Calibration of Large Language Models for Free | thinking pattern | [Replication Code](replications/seal/) |
 | _More replications coming soon..._ | | |
-
 
 ## License
 
@@ -474,7 +463,7 @@ LLM steering technology presents dual-use challenges: while enabling enhanced sa
 
 ## Acknowledgements
 
-We thank the [vLLM](https://github.com/vllm-project/vllm) project for providing the high-performance inference framework, and projects like [pyreft](https://github.com/stanfordnlp/pyreft) for their contributions to the field of representation learning. 
+We thank the [vLLM](https://github.com/vllm-project/vllm) project for providing the high-performance inference framework, and projects like [pyreft](https://github.com/stanfordnlp/pyreft) for their contributions to the field of representation learning.
 
 ## Citation
 
