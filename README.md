@@ -17,13 +17,9 @@
 \[ English | [中文](README_zh.md) \]
 </div>
 
----
-
 ## News 🔥
 
 [2025/09] We’ve open-sourced the code of EasySteel  — feel free to try it out!
-
----
 
 ## About
 
@@ -288,7 +284,7 @@ multi_vector_request = SteerVectorRequest(
 This module extracts and manages hidden states from language models, forming the foundation for steering vector generation.
 
 <details>
-    <summary> Hidden states extraction. </summary>
+    <summary><b>Hidden states extraction</b></summary>
 
 ```python
 # Import hidden states module to extract model activations
