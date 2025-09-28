@@ -19,7 +19,7 @@
 
 ## News 🔥
 
-[2025/09] We’ve open-sourced the code of EasySteel  — feel free to try it out!
+[2025/09] We’ve open-sourced the code of EasySteer  — feel free to try it out!
 
 ## About
 
