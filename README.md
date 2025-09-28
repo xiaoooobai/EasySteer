@@ -1,6 +1,8 @@
 <div align="center">
-  <img src="figures/logo.png" width="70%">
-  <h3>A Unified Framework for High-Performance and Extensible LLM Steering</h1>
+  <h1>
+    <img src="figures/logo.png" width="25%"><br>
+    A Unified Framework for High-Performance and Extensible LLM Steering
+  </h1>
 </div>
 
 <div align="center">
@@ -8,11 +10,7 @@
 [![GitHub Repo stars](https://img.shields.io/github/stars/ZJU-REAL/EasySteer?style=social)](https://github.com/ZJU-REAL/EasySteer/stargazers)
 [![GitHub last commit](https://img.shields.io/github/last-commit/ZJU-REAL/EasySteer)](https://github.com/ZJU-REAL/EasySteer/commits/main)
 [![GitHub](https://img.shields.io/github/license/ZJU-REAL/EasySteer)](https://github.com/ZJU-REAL/EasySteer/blob/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/easysteer)](https://pypi.org/project/easysteer/)
-[![Discord](https://dcbadge.vercel.app/api/server/easysteer?compact=true&style=flat)](https://discord.gg/easysteer)
-
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ZJU-REAL/EasySteer/blob/main/examples/EasySteer_basic_example.ipynb)
-[![Open in Spaces](https://img.shields.io/badge/🤗-Open%20in%20Spaces-blue)](https://huggingface.co/spaces/ZJU-REAL/EasySteer-Board)
+[![arXiv](https://img.shields.io/badge/arXiv-TBD-b31b1b.svg)](https://arxiv.org/abs/TBD)
 
 \[ English | [中文](README_zh.md) \]
 </div>
